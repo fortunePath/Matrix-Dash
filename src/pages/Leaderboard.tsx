@@ -21,16 +21,16 @@ const Leaderboard = () => {
   ];
 
   const getRankIcon = (rank: number) => {
-    if (rank === 1) return <Trophy className="w-6 h-6 text-warning" />;
-    if (rank === 2) return <Medal className="w-6 h-6 text-muted-foreground" />;
-    if (rank === 3) return <Award className="w-6 h-6 text-warning/60" />;
+    if (rank === 1) return <Trophy className="w-6 h-6 text-primary" />;
+    if (rank === 2) return <Medal className="w-6 h-6 text-secondary" />;
+    if (rank === 3) return <Award className="w-6 h-6 text-primary/60" />;
     return <span className="text-lg font-bold text-muted-foreground">#{rank}</span>;
   };
 
   const getRankStyle = (rank: number) => {
-    if (rank === 1) return 'border-warning bg-warning/10 matrix-glow';
-    if (rank === 2) return 'border-muted-foreground bg-muted-foreground/5';
-    if (rank === 3) return 'border-warning/60 bg-warning/5';
+    if (rank === 1) return 'border-primary bg-primary/10 matrix-glow';
+    if (rank === 2) return 'border-secondary bg-secondary/10 matrix-glow-green';
+    if (rank === 3) return 'border-primary/60 bg-primary/5';
     return 'border-primary/20 bg-card/30';
   };
 
@@ -50,10 +50,10 @@ const Leaderboard = () => {
               </Link>
               
               <nav className="hidden md:flex items-center gap-6">
-                <Link to="/tournaments" className="text-muted-foreground hover:text-accent transition-colors">
+                <Link to="/tournaments" className="text-muted-foreground hover:text-primary transition-colors">
                   TOURNAMENTS
                 </Link>
-                <Link to="/play" className="text-muted-foreground hover:text-accent transition-colors">
+                <Link to="/play" className="text-muted-foreground hover:text-primary transition-colors">
                   PLAY
                 </Link>
                 <Link to="/leaderboard" className="text-primary font-bold border-b-2 border-primary pb-1">
@@ -91,7 +91,7 @@ const Leaderboard = () => {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground mb-2">Total Players</div>
-                <div className="text-3xl font-bold text-accent">1,234</div>
+                <div className="text-3xl font-bold text-primary">1,234</div>
               </div>
             </div>
           </HolographicCard>
@@ -123,7 +123,7 @@ const Leaderboard = () => {
                       </div>
                       <div>
                         <span className="text-muted-foreground">Avg Score: </span>
-                        <span className="font-bold text-accent">
+                        <span className="font-bold text-primary">
                           {leader.avgScore.toLocaleString()}
                         </span>
                       </div>

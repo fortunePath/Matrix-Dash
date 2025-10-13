@@ -6,6 +6,7 @@ import { NeonButton } from '@/components/ui/neon-button';
 import { useTournaments } from '@/hooks/useTournaments';
 import { ArrowLeft, Trophy, Target, Clock, Zap } from 'lucide-react';
 import { HolographicCard } from '@/components/HolographicCard';
+import { SimpleMatrixGame } from '@/components/SimpleMatrixGame';
 
 const Play = () => {
   const { tournamentId } = useParams();
@@ -15,6 +16,10 @@ const Play = () => {
   const [gameStatus, setGameStatus] = useState<'lobby' | 'playing' | 'ended'>('lobby');
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(3600); // Mock 1 hour
+  
+  const handleScoreUpdate = (newScore: number) => {
+    setScore(newScore);
+  };
 
   useEffect(() => {
     if (gameStatus === 'playing') {
@@ -44,12 +49,11 @@ const Play = () => {
       <div className="min-h-screen flex items-center justify-center scanlines">
         <MatrixBackground />
         <div className="relative z-10 text-center">
-          <GlitchText as="h1" className="text-4xl mb-4 text-destructive">
+          <GlitchText as="h1" className="text-4xl mb-8 text-primary">
             TOURNAMENT NOT FOUND
           </GlitchText>
           <Link to="/tournaments">
-            <NeonButton variant="secondary" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
+            <NeonButton variant="default">
               BACK TO TOURNAMENTS
             </NeonButton>
           </Link>
@@ -73,7 +77,7 @@ const Play = () => {
           </Link>
 
           <div className="max-w-2xl mx-auto text-center">
-            <GlitchText as="h1" className="text-5xl mb-8 text-warning animate-pulse-glow">
+            <GlitchText as="h1" className="text-5xl mb-8 text-primary">
               TOURNAMENT PENDING
             </GlitchText>
 
@@ -93,7 +97,7 @@ const Play = () => {
                 <div className="grid grid-cols-2 gap-4 pt-6">
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Participants</div>
-                    <div className="text-3xl font-bold text-accent">{tournament.participantCount}</div>
+                    <div className="text-3xl font-bold text-primary">{tournament.participantCount}</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Pool Progress</div>
@@ -118,7 +122,7 @@ const Play = () => {
                     className="bg-card/30 border border-primary/20 rounded p-3 font-mono text-sm animate-fade-in"
                     style={{ animationDelay: `${i * 0.1}s` }}
                   >
-                    <span className="text-accent">RUNNER_{i + 1}</span>
+                    <span className="text-primary">RUNNER_{i + 1}</span>
                     <span className="text-muted-foreground mx-2">|</span>
                     <span className="text-primary">READY</span>
                   </div>
@@ -149,8 +153,8 @@ const Play = () => {
 
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-accent" />
-                <span className="text-2xl font-bold font-mono text-accent">
+                <Clock className="w-5 h-5 text-primary" />
+                <span className="text-2xl font-bold font-mono text-primary">
                   {formatTime(timeLeft)}
                 </span>
               </div>
@@ -177,36 +181,58 @@ const Play = () => {
       <div className="pt-20 h-screen flex">
         {/* Game Canvas */}
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="w-full max-w-4xl aspect-video bg-gradient-to-br from-background via-primary/5 to-secondary/5 rounded-lg border-2 neon-border matrix-glow relative overflow-hidden">
-            {/* Placeholder for actual game */}
+          <div className="w-full max-w-4xl">
             {gameStatus === 'lobby' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="aspect-video bg-gradient-to-br from-background via-primary/5 to-secondary/5 rounded-lg border-2 neon-border matrix-glow flex flex-col items-center justify-center">
                 <GlitchText as="h2" className="text-4xl mb-8 text-primary">
-                  READY TO RUN?
+                  READY TO ENTER THE MATRIX?
                 </GlitchText>
                 <NeonButton
                   size="xl"
                   variant="secondary"
                   onClick={() => setGameStatus('playing')}
-                  className="gap-2 animate-pulse-glow"
+                  className="gap-2"
                 >
                   <Zap className="w-6 h-6" />
                   START GAME
                 </NeonButton>
                 <p className="mt-4 text-sm text-muted-foreground">
-                  Press SPACE or CLICK to jump
+                  Use ARROW KEYS to move, SPACEBAR to shoot
                 </p>
               </div>
             )}
 
             {gameStatus === 'playing' && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <GlitchText as="p" className="text-6xl text-accent animate-pulse">
-                  [GAME CANVAS HERE]
+              <div className="w-full">
+                <SimpleMatrixGame 
+                  onScoreUpdate={handleScoreUpdate}
+                  isPlaying={gameStatus === 'playing'}
+                />
+                <div className="text-center mt-4">
+                  <NeonButton
+                    variant="ghost"
+                    onClick={() => setGameStatus('lobby')}
+                    className="text-sm"
+                  >
+                    RESTART GAME
+                  </NeonButton>
+                </div>
+              </div>
+            )}
+            
+            {gameStatus === 'ended' && (
+              <div className="aspect-video bg-gradient-to-br from-background via-primary/5 to-secondary/5 rounded-lg border-2 neon-border matrix-glow flex flex-col items-center justify-center">
+                <GlitchText as="h2" className="text-4xl mb-4 text-primary">
+                  GAME COMPLETED
                 </GlitchText>
-                <p className="absolute bottom-8 text-sm text-muted-foreground">
-                  Your Geometry Dash game logic will render here
-                </p>
+                <p className="text-xl text-secondary mb-8">Final Score: {score.toLocaleString()}</p>
+                <NeonButton
+                  size="xl"
+                  variant="default"
+                  onClick={() => setGameStatus('lobby')}
+                >
+                  PLAY AGAIN
+                </NeonButton>
               </div>
             )}
           </div>
@@ -229,7 +255,7 @@ const Play = () => {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-lg font-bold text-accent">
+                  <span className="text-lg font-bold text-primary">
                     #{entry.rank}
                   </span>
                   <span className="text-xl font-bold text-primary">
@@ -259,7 +285,7 @@ const Play = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Treasury (10%):</span>
-                <span className="font-bold text-accent">
+                <span className="font-bold text-primary">
                   {(tournament.currentPool * 0.1).toFixed(2)} STX
                 </span>
               </div>

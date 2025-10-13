@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 interface HolographicCardProps {
   children: ReactNode;
   className?: string;
-  glowColor?: 'primary' | 'secondary' | 'cyan';
+  glowColor?: 'primary' | 'secondary' | 'orange';
 }
 
 export const HolographicCard = ({ 
@@ -15,13 +15,13 @@ export const HolographicCard = ({
   const glowClass = {
     primary: 'matrix-glow',
     secondary: 'matrix-glow-green',
-    cyan: 'matrix-glow-cyan'
+    orange: 'matrix-glow-orange'
   }[glowColor];
 
   return (
     <div
       className={cn(
-        "relative rounded-lg border neon-border bg-card/50 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-[1.02] hover:bg-card/70 group scanlines",
+        "relative rounded-lg border neon-border bg-card/50 backdrop-blur-sm p-6 group scanlines",
         glowClass,
         className
       )}

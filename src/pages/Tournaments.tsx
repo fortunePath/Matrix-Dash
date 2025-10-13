@@ -46,10 +46,10 @@ const Tournaments = () => {
                 <Link to="/tournaments" className="text-primary font-bold border-b-2 border-primary pb-1">
                   TOURNAMENTS
                 </Link>
-                <Link to="/play" className="text-muted-foreground hover:text-accent transition-colors">
+                <Link to="/play" className="text-muted-foreground hover:text-primary transition-colors">
                   PLAY
                 </Link>
-                <Link to="/leaderboard" className="text-muted-foreground hover:text-accent transition-colors">
+                <Link to="/leaderboard" className="text-muted-foreground hover:text-primary transition-colors">
                   LEADERBOARD
                 </Link>
               </nav>
@@ -67,7 +67,7 @@ const Tournaments = () => {
 
         {/* Filters */}
         <div className="flex items-center gap-4 mb-6">
-          <div className="flex items-center gap-2 text-accent">
+          <div className="flex items-center gap-2 text-primary">
             <Filter className="w-5 h-5" />
             <span className="font-bold">FILTER:</span>
           </div>

@@ -56,7 +56,7 @@ export const CreateTournamentForm = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <Label htmlFor="minEntryPrice" className="text-accent mb-2 block">
+            <Label htmlFor="minEntryPrice" className="text-primary mb-2 block">
               MIN_ENTRY_PRICE
             </Label>
             <Input
@@ -72,7 +72,7 @@ export const CreateTournamentForm = () => {
           </div>
 
           <div>
-            <Label htmlFor="poolContribution" className="text-accent mb-2 block">
+            <Label htmlFor="poolContribution" className="text-primary mb-2 block">
               POOL_CONTRIBUTION
             </Label>
             <Input
@@ -88,7 +88,7 @@ export const CreateTournamentForm = () => {
           </div>
 
           <div>
-            <Label htmlFor="targetPool" className="text-accent mb-2 block">
+            <Label htmlFor="targetPool" className="text-primary mb-2 block">
               TARGET_POOL
             </Label>
             <Input
@@ -104,7 +104,7 @@ export const CreateTournamentForm = () => {
           </div>
 
           <div>
-            <Label htmlFor="duration" className="text-accent mb-2 block">
+            <Label htmlFor="duration" className="text-primary mb-2 block">
               DURATION (blocks)
             </Label>
             <Input
@@ -134,7 +134,7 @@ export const CreateTournamentForm = () => {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Remaining needed:</span>
-            <span className="font-bold text-warning">{remainingNeeded} STX</span>
+            <span className="font-bold text-primary">{remainingNeeded} STX</span>
           </div>
           
           {/* Progress Bar */}
@@ -148,12 +148,11 @@ export const CreateTournamentForm = () => {
 
         <NeonButton
           type="submit"
-          variant="secondary"
+          variant="default"
           size="xl"
           className="w-full gap-2"
           disabled={isCreating}
         >
-          <Rocket className="w-5 h-5" />
           {isCreating ? 'DEPLOYING...' : 'DEPLOY TOURNAMENT'}
         </NeonButton>
       </form>

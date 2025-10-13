@@ -75,13 +75,13 @@ export const EntryModal = ({ tournament, onClose, onEnter, walletBalance }: Entr
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Participants:</span>
-              <span className="font-bold text-accent">{tournament.participantCount}</span>
+              <span className="font-bold text-primary">{tournament.participantCount}</span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="entryAmount" className="text-accent mb-2 block">
+              <Label htmlFor="entryAmount" className="text-primary mb-2 block">
                 ENTRY_AMOUNT
               </Label>
               <Input
@@ -119,7 +119,7 @@ export const EntryModal = ({ tournament, onClose, onEnter, walletBalance }: Entr
             <div className="bg-muted/20 rounded-lg p-4 space-y-2 border border-primary/30">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Your stake:</span>
-                <span className="font-bold text-warning">{entryAmount} STX</span>
+                <span className="font-bold text-primary">{entryAmount} STX</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Pool after entry:</span>
@@ -131,11 +131,11 @@ export const EntryModal = ({ tournament, onClose, onEnter, walletBalance }: Entr
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Est. prize (top 10%):</span>
-                <span className="font-bold text-accent">{estimatedPrize.toFixed(2)} STX</span>
+                <span className="font-bold text-primary">{estimatedPrize.toFixed(2)} STX</span>
               </div>
 
               {willStartTournament && (
-                <div className="mt-4 p-3 bg-secondary/20 rounded border border-secondary animate-pulse-glow">
+                <div className="mt-4 p-3 bg-secondary/20 rounded border border-secondary">
                   <div className="flex items-center gap-2 text-secondary font-bold">
                     <Zap className="w-5 h-5" />
                     THIS WILL START THE TOURNAMENT

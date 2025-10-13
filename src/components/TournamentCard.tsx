@@ -14,7 +14,7 @@ export const TournamentCard = ({ tournament, onEnter }: TournamentCardProps) => 
   const getStatusColor = (status: Tournament['status']) => {
     switch (status) {
       case 'pending':
-        return 'bg-warning/20 text-warning border-warning/50';
+        return 'bg-primary/20 text-primary border-primary/50';
       case 'active':
         return 'bg-secondary/20 text-secondary border-secondary/50';
       case 'ended':
@@ -85,7 +85,7 @@ export const TournamentCard = ({ tournament, onEnter }: TournamentCardProps) => 
             <Users className="w-4 h-4" />
             Runners
           </span>
-          <span className="font-bold text-accent">{tournament.participantCount}</span>
+          <span className="font-bold text-primary">{tournament.participantCount}</span>
         </div>
 
         <div className="flex items-center justify-between text-sm">
@@ -93,7 +93,7 @@ export const TournamentCard = ({ tournament, onEnter }: TournamentCardProps) => 
             <Zap className="w-4 h-4" />
             Min Entry
           </span>
-          <span className="font-bold text-warning">{tournament.minEntryPrice} STX</span>
+          <span className="font-bold text-primary">{tournament.minEntryPrice} STX</span>
         </div>
 
         {tournament.status !== 'pending' && (
@@ -109,13 +109,13 @@ export const TournamentCard = ({ tournament, onEnter }: TournamentCardProps) => 
 
       {/* Creator */}
       <div className="text-xs text-muted-foreground mb-4">
-        Creator: <span className="text-accent font-mono">{tournament.creator}</span>
+        Creator: <span className="text-primary font-mono">{tournament.creator}</span>
       </div>
 
       {/* Action Button */}
       {tournament.status !== 'ended' && (
         <NeonButton
-          variant="secondary"
+          variant="default"
           className="w-full mt-auto"
           onClick={() => onEnter(tournament.id)}
         >

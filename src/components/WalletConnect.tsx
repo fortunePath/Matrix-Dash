@@ -40,7 +40,7 @@ export const WalletConnect = () => {
       </div>
       <div className="text-right">
         <div className="text-sm text-muted-foreground">Address</div>
-        <div className="text-sm font-mono text-accent">
+        <div className="text-sm font-mono text-primary">
           {truncateAddress(walletAddress!)}
         </div>
       </div>

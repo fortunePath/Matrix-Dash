@@ -84,41 +84,22 @@ export default {
           "0%": { transform: "translateX(100%)", opacity: "0" },
           "100%": { transform: "translateX(0)", opacity: "1" }
         },
-        "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 5px hsl(var(--primary) / 0.5)" },
-          "50%": { boxShadow: "0 0 20px hsl(var(--primary) / 0.8), 0 0 30px hsl(var(--primary) / 0.5)" }
-        },
         "matrix-rain": {
           "0%": { transform: "translateY(-100%)" },
           "100%": { transform: "translateY(100vh)" }
-        },
-        "glitch-skew": {
-          "0%": { transform: "skew(0deg)" },
-          "20%": { transform: "skew(-2deg)" },
-          "40%": { transform: "skew(2deg)" },
-          "60%": { transform: "skew(-1deg)" },
-          "80%": { transform: "skew(1deg)" },
-          "100%": { transform: "skew(0deg)" }
         },
         "typewriter": {
           "0%": { width: "0" },
           "100%": { width: "100%" }
         },
-        "blink": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0" }
-        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
-        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "matrix-rain": "matrix-rain 3s linear infinite",
-        "glitch-skew": "glitch-skew 0.5s ease-in-out",
         "typewriter": "typewriter 2s steps(40) 1s forwards",
-        "blink": "blink 1s step-end infinite"
       },
     },
   },
