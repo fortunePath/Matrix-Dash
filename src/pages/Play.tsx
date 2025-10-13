@@ -1,0 +1,280 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { MatrixBackground } from '@/components/MatrixBackground';
+import { GlitchText } from '@/components/GlitchText';
+import { NeonButton } from '@/components/ui/neon-button';
+import { useTournaments } from '@/hooks/useTournaments';
+import { ArrowLeft, Trophy, Target, Clock, Zap } from 'lucide-react';
+import { HolographicCard } from '@/components/HolographicCard';
+
+const Play = () => {
+  const { tournamentId } = useParams();
+  const { getTournamentById } = useTournaments();
+  const tournament = tournamentId ? getTournamentById(tournamentId) : null;
+  
+  const [gameStatus, setGameStatus] = useState<'lobby' | 'playing' | 'ended'>('lobby');
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(3600); // Mock 1 hour
+
+  useEffect(() => {
+    if (gameStatus === 'playing') {
+      const interval = setInterval(() => {
+        setTimeLeft(prev => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [gameStatus]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const mockLeaderboard = [
+    { rank: 1, address: 'SP2J6...ABCD', score: 15420 },
+    { rank: 2, address: 'SP3K9...WXYZ', score: 14850 },
+    { rank: 3, address: 'SP1A2...EFGH', score: 13200 },
+    { rank: 4, address: 'SP9X8...IJKL', score: 12100 },
+    { rank: 5, address: 'SP7Y5...MNOP', score: 11500 },
+  ];
+
+  if (!tournament) {
+    return (
+      <div className="min-h-screen flex items-center justify-center scanlines">
+        <MatrixBackground />
+        <div className="relative z-10 text-center">
+          <GlitchText as="h1" className="text-4xl mb-4 text-destructive">
+            TOURNAMENT NOT FOUND
+          </GlitchText>
+          <Link to="/tournaments">
+            <NeonButton variant="secondary" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              BACK TO TOURNAMENTS
+            </NeonButton>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Lobby View (Before Tournament Starts)
+  if (tournament.status === 'pending') {
+    return (
+      <div className="min-h-screen scanlines">
+        <MatrixBackground />
+        
+        <div className="container mx-auto px-4 py-8 relative z-10">
+          <Link to="/tournaments">
+            <NeonButton variant="ghost" className="gap-2 mb-6">
+              <ArrowLeft className="w-4 h-4" />
+              EXIT MATRIX
+            </NeonButton>
+          </Link>
+
+          <div className="max-w-2xl mx-auto text-center">
+            <GlitchText as="h1" className="text-5xl mb-8 text-warning animate-pulse-glow">
+              TOURNAMENT PENDING
+            </GlitchText>
+
+            <HolographicCard className="mb-8">
+              <div className="space-y-6">
+                <div className="text-6xl font-bold text-primary">
+                  {tournament.currentPool} / {tournament.targetPool} STX
+                </div>
+                
+                <div className="w-full bg-muted rounded-full h-4">
+                  <div
+                    className="bg-secondary h-4 rounded-full transition-all duration-500 matrix-glow-green"
+                    style={{ width: `${(tournament.currentPool / tournament.targetPool) * 100}%` }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-6">
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Participants</div>
+                    <div className="text-3xl font-bold text-accent">{tournament.participantCount}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Pool Progress</div>
+                    <div className="text-3xl font-bold text-secondary">
+                      {Math.round((tournament.currentPool / tournament.targetPool) * 100)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </HolographicCard>
+
+            <div className="text-lg text-muted-foreground font-mono">
+              Waiting for more runners to jack in...
+            </div>
+
+            {/* Participant List */}
+            <div className="mt-8 max-h-64 overflow-y-auto">
+              <div className="text-left space-y-2">
+                {Array.from({ length: tournament.participantCount }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-card/30 border border-primary/20 rounded p-3 font-mono text-sm animate-fade-in"
+                    style={{ animationDelay: `${i * 0.1}s` }}
+                  >
+                    <span className="text-accent">RUNNER_{i + 1}</span>
+                    <span className="text-muted-foreground mx-2">|</span>
+                    <span className="text-primary">READY</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Game View (When Active)
+  return (
+    <div className="min-h-screen scanlines">
+      <MatrixBackground />
+
+      {/* HUD */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b border-primary/30">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Link to="/tournaments">
+              <NeonButton variant="ghost" size="sm" className="gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                EXIT
+              </NeonButton>
+            </Link>
+
+            <div className="flex items-center gap-8">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-accent" />
+                <span className="text-2xl font-bold font-mono text-accent">
+                  {formatTime(timeLeft)}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                <span className="text-2xl font-bold font-mono text-primary">
+                  {score.toLocaleString()}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-secondary" />
+                <span className="text-lg font-bold font-mono text-secondary">
+                  RANK #5
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Game Area */}
+      <div className="pt-20 h-screen flex">
+        {/* Game Canvas */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-4xl aspect-video bg-gradient-to-br from-background via-primary/5 to-secondary/5 rounded-lg border-2 neon-border matrix-glow relative overflow-hidden">
+            {/* Placeholder for actual game */}
+            {gameStatus === 'lobby' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <GlitchText as="h2" className="text-4xl mb-8 text-primary">
+                  READY TO RUN?
+                </GlitchText>
+                <NeonButton
+                  size="xl"
+                  variant="secondary"
+                  onClick={() => setGameStatus('playing')}
+                  className="gap-2 animate-pulse-glow"
+                >
+                  <Zap className="w-6 h-6" />
+                  START GAME
+                </NeonButton>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Press SPACE or CLICK to jump
+                </p>
+              </div>
+            )}
+
+            {gameStatus === 'playing' && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <GlitchText as="p" className="text-6xl text-accent animate-pulse">
+                  [GAME CANVAS HERE]
+                </GlitchText>
+                <p className="absolute bottom-8 text-sm text-muted-foreground">
+                  Your Geometry Dash game logic will render here
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Side Panel - Leaderboard */}
+        <div className="w-80 bg-card/50 backdrop-blur-sm border-l border-primary/30 p-6 overflow-y-auto">
+          <GlitchText as="h3" className="text-2xl mb-6 text-secondary">
+            LIVE RANKINGS
+          </GlitchText>
+
+          <div className="space-y-3">
+            {mockLeaderboard.map((entry) => (
+              <div
+                key={entry.rank}
+                className={`p-3 rounded border transition-all ${
+                  entry.rank <= 3
+                    ? 'border-secondary bg-secondary/10 matrix-glow-green'
+                    : 'border-primary/20 bg-card/30'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-lg font-bold text-accent">
+                    #{entry.rank}
+                  </span>
+                  <span className="text-xl font-bold text-primary">
+                    {entry.score.toLocaleString()}
+                  </span>
+                </div>
+                <div className="text-xs font-mono text-muted-foreground">
+                  {entry.address}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Prize Distribution */}
+          <div className="mt-8 p-4 bg-muted/20 rounded border border-secondary/30">
+            <h4 className="text-sm font-bold text-secondary mb-3">PRIZE POOL</h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total:</span>
+                <span className="font-bold text-primary">{tournament.currentPool} STX</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">To Winners (80%):</span>
+                <span className="font-bold text-secondary">
+                  {(tournament.currentPool * 0.8).toFixed(2)} STX
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Treasury (10%):</span>
+                <span className="font-bold text-accent">
+                  {(tournament.currentPool * 0.1).toFixed(2)} STX
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Burned (10%):</span>
+                <span className="font-bold text-destructive">
+                  {(tournament.currentPool * 0.1).toFixed(2)} STX
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Play;
