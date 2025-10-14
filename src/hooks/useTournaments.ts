@@ -132,6 +132,26 @@ export const useTournaments = () => {
     return tournaments.find(t => t.id === id);
   };
 
+  const getTournamentParticipants = async (tournamentId: string) => {
+    try {
+      const tournament = getTournamentById(tournamentId);
+      if (!tournament) return [];
+
+      const participants: Array<{ address: string; score: number }> = [];
+
+      return participants;
+    } catch (err) {
+      console.error('Error fetching tournament participants:', err);
+      return [];
+    }
+  };
+
+  const calculateWinners = (participants: Array<{ address: string; score: number }>) => {
+    const sorted = [...participants].sort((a, b) => b.score - a.score);
+    const winnerCount = Math.max(1, Math.ceil(sorted.length * 0.1));
+    return sorted.slice(0, winnerCount).map(p => p.address);
+  };
+
   return {
     tournaments,
     loading,
@@ -139,5 +159,7 @@ export const useTournaments = () => {
     createTournament,
     enterTournament,
     getTournamentById,
+    getTournamentParticipants,
+    calculateWinners,
   };
 };

@@ -5,9 +5,10 @@ interface SimpleMatrixGameProps {
   onScoreUpdate: (score: number) => void;
   isPlaying: boolean;
   onRestart?: () => void;
+  onGameEnd?: (finalScore: number) => void;
 }
 
-export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdate, isPlaying, onRestart }) => {
+export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdate, isPlaying, onRestart, onGameEnd }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const keysPressed = useRef<Set<string>>(new Set());
@@ -286,14 +287,15 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     setEnemies(prev => {
       const updated = prev.map(enemy => ({ ...enemy, y: enemy.y + 2 }));
       
-      // Count enemies that reach the bottom
       const reachingBottom = updated.filter(enemy => enemy.y >= 600);
       if (reachingBottom.length > 0) {
         setEnemiesPassed(current => {
           const newCount = current + reachingBottom.length;
-          // Check if game over should be triggered (5 enemies passed)
           if (newCount >= 5 && !gameOver) {
             setGameOver(true);
+            if (onGameEnd) {
+              onGameEnd(score);
+            }
           }
           return newCount;
         });

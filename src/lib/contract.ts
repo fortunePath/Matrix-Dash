@@ -145,13 +145,65 @@ export const contractAPI = {
   },
 
   getTournamentConstants: async () => {
-    // These are constants defined in the contract
     return {
-      min_entry_price: 1000000, // 1 STX in microSTX
-      min_pool_contribution: 5000000, // 5 STX in microSTX
+      min_entry_price: 1000000,
+      min_pool_contribution: 5000000,
       winners_percentage: 80,
       treasury_percentage: 10,
       burn_percentage: 10
     };
+  },
+
+  getLeaderboardPosition: async (tournamentId: number, rank: number) => {
+    try {
+      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-leaderboard-position`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: CONTRACT_PRINCIPAL,
+          arguments: [
+            `0x${tournamentId.toString(16).padStart(16, '0')}`,
+            `0x${rank.toString(16).padStart(16, '0')}`
+          ]
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.result;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching leaderboard position:', error);
+      return null;
+    }
+  },
+
+  getTournamentWinners: async (tournamentId: number) => {
+    try {
+      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-tournament-winners`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: CONTRACT_PRINCIPAL,
+          arguments: [`0x${tournamentId.toString(16).padStart(16, '0')}`]
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.result;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching tournament winners:', error);
+      return null;
+    }
   },
 };

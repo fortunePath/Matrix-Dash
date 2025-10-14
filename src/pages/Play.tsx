@@ -4,22 +4,72 @@ import { MatrixBackground } from '@/components/MatrixBackground';
 import { GlitchText } from '@/components/GlitchText';
 import { NeonButton } from '@/components/ui/neon-button';
 import { useTournaments } from '@/hooks/useTournaments';
+import { useContract } from '@/hooks/useContract';
+import { useWallet } from '@/contexts/WalletContext';
 import { ArrowLeft, Trophy, Target, Clock, Zap } from 'lucide-react';
 import { HolographicCard } from '@/components/HolographicCard';
 import { SimpleMatrixGame } from '@/components/SimpleMatrixGame';
+import { TournamentEndManager } from '@/components/TournamentEndManager';
+import { toast } from 'sonner';
 
 const Play = () => {
   const { tournamentId } = useParams();
   const { getTournamentById } = useTournaments();
+  const { submitScore } = useContract();
+  const { isConnected, walletAddress } = useWallet();
   const tournament = tournamentId ? getTournamentById(tournamentId) : null;
-  
+
   const [gameStatus, setGameStatus] = useState<'lobby' | 'playing' | 'ended'>('lobby');
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [leaderboard, setLeaderboard] = useState<Array<{ rank: number; address: string; score: number }>>([]);
+  const [isSubmittingScore, setIsSubmittingScore] = useState(false);
   
   const handleScoreUpdate = (newScore: number) => {
     setScore(newScore);
+  };
+
+  const handleSubmitScore = async (finalScore: number) => {
+    if (!tournament || !tournamentId || !isConnected) {
+      return;
+    }
+
+    if (tournament.status !== 'active') {
+      toast.error('Cannot submit score - tournament is not active');
+      return;
+    }
+
+    setIsSubmittingScore(true);
+
+    try {
+      const result = await submitScore(Number(tournamentId), finalScore);
+
+      if (result.success) {
+        toast.success('Score submitted successfully!', {
+          description: `Your score of ${finalScore.toLocaleString()} has been recorded`,
+        });
+      } else {
+        toast.error('Failed to submit score', {
+          description: result.error || 'Unknown error occurred',
+        });
+      }
+    } catch (error: any) {
+      console.error('Score submission error:', error);
+      toast.error('Failed to submit score', {
+        description: error.message || 'Unknown error occurred',
+      });
+    } finally {
+      setIsSubmittingScore(false);
+    }
+  };
+
+  const handleGameEnd = (finalScore: number) => {
+    setScore(finalScore);
+    setGameStatus('ended');
+
+    if (tournament && tournamentId && isConnected) {
+      handleSubmitScore(finalScore);
+    }
   };
 
   useEffect(() => {
@@ -114,9 +164,10 @@ const Play = () => {
 
               {gameStatus === 'playing' && (
                 <div className="w-full">
-                  <SimpleMatrixGame 
+                  <SimpleMatrixGame
                     onScoreUpdate={handleScoreUpdate}
                     isPlaying={gameStatus === 'playing'}
+                    onGameEnd={handleGameEnd}
                   />
                   <div className="text-center mt-4">
                     <NeonButton
@@ -301,9 +352,10 @@ const Play = () => {
 
             {gameStatus === 'playing' && (
               <div className="w-full">
-                <SimpleMatrixGame 
+                <SimpleMatrixGame
                   onScoreUpdate={handleScoreUpdate}
                   isPlaying={gameStatus === 'playing'}
+                  onGameEnd={handleGameEnd}
                 />
                 <div className="text-center mt-4">
                   <NeonButton
@@ -401,6 +453,13 @@ const Play = () => {
               </div>
             </div>
           </div>
+
+          {/* Tournament Management */}
+          {tournamentId && (
+            <div className="mt-8">
+              <TournamentEndManager tournamentId={tournamentId} />
+            </div>
+          )}
         </div>
       </div>
     </div>
