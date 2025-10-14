@@ -1,11 +1,13 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { NeonButton } from './ui/neon-button';
 
 interface SimpleMatrixGameProps {
   onScoreUpdate: (score: number) => void;
   isPlaying: boolean;
+  onRestart?: () => void;
 }
 
-export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdate, isPlaying }) => {
+export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdate, isPlaying, onRestart }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const keysPressed = useRef<Set<string>>(new Set());
@@ -18,6 +20,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
   const [lastShot, setLastShot] = useState(0);
   const [lastEnemySpawn, setLastEnemySpawn] = useState(0);
   const [enemiesPassed, setEnemiesPassed] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
 
   // Simple shoot sound
   const playShootSound = useCallback(() => {
@@ -42,10 +45,32 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     }
   }, []);
 
+  // Restart game function
+  const restartGame = useCallback(() => {
+    setScore(0);
+    setPlayer({ x: 400, y: 500 });
+    setBullets([]);
+    setEnemies([]);
+    setLastShot(0);
+    setLastEnemySpawn(0);
+    setEnemiesPassed(0);
+    setGameOver(false);
+    onScoreUpdate(0);
+  }, [onScoreUpdate]);
+
   // Handle keyboard
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       keysPressed.current.add(e.code);
+      
+      // Handle restart on 'R' key press when game is over
+      if (e.code === 'KeyR' && gameOver) {
+        restartGame();
+        if (onRestart) {
+          onRestart();
+        }
+      }
+      
       e.preventDefault();
     };
 
@@ -61,11 +86,11 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [gameOver, restartGame, onRestart]);
 
   // Game loop
   const gameLoop = useCallback(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || gameOver) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -86,9 +111,6 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     }
     if (keysPressed.current.has('ArrowRight') && newPlayer.x < 780) {
       newPlayer.x += 5;
-    }
-    if (keysPressed.current.has('ArrowUp') && newPlayer.y > 20) {
-      newPlayer.y -= 5;
     }
     if (keysPressed.current.has('ArrowDown') && newPlayer.y < 580) {
       newPlayer.y += 5;
@@ -126,7 +148,14 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       // Count enemies that reach the bottom
       const reachingBottom = updated.filter(enemy => enemy.y >= 600);
       if (reachingBottom.length > 0) {
-        setEnemiesPassed(current => current + reachingBottom.length);
+        setEnemiesPassed(current => {
+          const newCount = current + reachingBottom.length;
+          // Check if game over should be triggered (5 enemies passed)
+          if (newCount >= 5 && !gameOver) {
+            setGameOver(true);
+          }
+          return newCount;
+        });
       }
       
       return updated.filter(enemy => enemy.y < 600);
@@ -179,13 +208,16 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
 
     // Draw UI
     ctx.fillStyle = '#00FF00';
-    ctx.font = '20px monospace';
-    ctx.fillText(`Score: ${score}`, 10, 30);
-    ctx.fillText(`Enemies Passed: ${enemiesPassed}`, 10, 60);
-    ctx.fillText('Use arrows to move, space to shoot', 10, 580);
+    ctx.font = '18px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Score: ${score}`, 400, 30);
+    ctx.fillText(`Enemies Passed: ${enemiesPassed}`, 400, 55);
+    ctx.font = '14px monospace';
+    ctx.fillText('Use left/right arrows to move, space to shoot', 400, 580);
+    ctx.textAlign = 'left';
 
     animationRef.current = requestAnimationFrame(gameLoop);
-  }, [isPlaying, player, bullets, enemies, score, lastShot, lastEnemySpawn, enemiesPassed, onScoreUpdate, playShootSound]);
+  }, [isPlaying, gameOver, player, bullets, enemies, score, lastShot, lastEnemySpawn, enemiesPassed, onScoreUpdate, playShootSound]);
 
   // Start/stop game loop
   useEffect(() => {
@@ -216,7 +248,23 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, 800, 600);
     
-    if (!isPlaying) {
+    if (gameOver) {
+      ctx.fillStyle = '#FF0000';
+      ctx.font = 'bold 48px "Orbitron", "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', 400, 280);
+      
+      ctx.font = 'bold 24px "Orbitron", "Courier New", monospace';
+      ctx.fillStyle = '#FF6666';
+      ctx.fillText('5 Enemies Passed!', 400, 320);
+      
+      ctx.fillStyle = '#FFAA00';
+      ctx.fillText(`Final Score: ${score}`, 400, 350);
+      
+      ctx.font = '18px "Orbitron", "Courier New", monospace';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText('Press R to Restart', 400, 400);
+    } else if (!isPlaying) {
       ctx.fillStyle = '#00FF00';
       ctx.font = '24px monospace';
       ctx.textAlign = 'center';
@@ -224,10 +272,11 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       ctx.font = '16px monospace';
       ctx.fillText('Click START GAME to begin', 400, 330);
     }
-  }, [isPlaying]);
+  }, [isPlaying, gameOver, score]);
+
 
   return (
-    <div className="flex justify-center">
+    <div className="flex flex-col items-center gap-4">
       <canvas
         ref={canvasRef}
         width={800}
@@ -235,6 +284,20 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
         className="border-2 border-primary bg-black"
         style={{ maxWidth: '100%', height: 'auto' }}
       />
+      {gameOver && (
+        <NeonButton
+          onClick={() => {
+            restartGame();
+            if (onRestart) {
+              onRestart();
+            }
+          }}
+          variant="warning"
+          size="lg"
+        >
+          RESTART GAME
+        </NeonButton>
+      )}
     </div>
   );
 };
