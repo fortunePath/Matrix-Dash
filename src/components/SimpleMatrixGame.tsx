@@ -12,6 +12,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const keysPressed = useRef<Set<string>>(new Set());
+  const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
   
   // Game state
   const [score, setScore] = useState(0);
@@ -27,6 +28,38 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
   const [selectedCharacter, setSelectedCharacter] = useState<'neo' | 'morpheus' | 'trinity'>('neo');
   const [showCharacterSelect, setShowCharacterSelect] = useState(true);
   const [floatingTexts, setFloatingTexts] = useState<Array<{ x: number; y: number; text: string; id: number; life: number }>>([]);
+
+  // Initialize background music
+  useEffect(() => {
+    const audio = new Audio('/chemical-plant-zone.mp3');
+    audio.loop = true;
+    audio.volume = 0.3; // Background volume (30%)
+    backgroundMusicRef.current = audio;
+
+    return () => {
+      if (backgroundMusicRef.current) {
+        backgroundMusicRef.current.pause();
+        backgroundMusicRef.current = null;
+      }
+    };
+  }, []);
+
+  // Background music control
+  const playBackgroundMusic = useCallback(() => {
+    if (backgroundMusicRef.current) {
+      backgroundMusicRef.current.play().catch(e => {
+        console.log('Could not play background music:', e);
+        // Fallback: try again after user interaction (common in modern browsers)
+      });
+    }
+  }, []);
+
+  const stopBackgroundMusic = useCallback(() => {
+    if (backgroundMusicRef.current) {
+      backgroundMusicRef.current.pause();
+      backgroundMusicRef.current.currentTime = 0;
+    }
+  }, []);
 
   // Simple shoot sound
   const playShootSound = useCallback(() => {
@@ -126,6 +159,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
 
   // Restart game function
   const restartGame = useCallback(() => {
+    stopBackgroundMusic();
     setScore(0);
     setPlayer({ x: 400, y: 500 });
     setBullets([]);
@@ -139,7 +173,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     setGameOver(false);
     setShowCharacterSelect(true);
     onScoreUpdate(0);
-  }, [onScoreUpdate]);
+  }, [onScoreUpdate, stopBackgroundMusic]);
 
   // Handle keyboard
   useEffect(() => {
@@ -158,6 +192,10 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       if (showCharacterSelect) {
         if (e.code === 'Space') {
           setShowCharacterSelect(false);
+          // Start background music when entering the actual game
+          if (isPlaying) {
+            playBackgroundMusic();
+          }
         } else if (e.code === 'ArrowLeft') {
           if (selectedCharacter === 'morpheus') setSelectedCharacter('neo');
           else if (selectedCharacter === 'trinity') setSelectedCharacter('morpheus');
@@ -182,7 +220,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [gameOver, restartGame, onRestart, showCharacterSelect, selectedCharacter]);
+  }, [gameOver, restartGame, onRestart, showCharacterSelect, selectedCharacter, isPlaying, playBackgroundMusic]);
 
   // Handle canvas clicks for character selection
   useEffect(() => {
@@ -202,12 +240,24 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       if (x >= 150 && x <= 250 && y >= 180 && y <= 360) {
         setSelectedCharacter('neo');
         setShowCharacterSelect(false);
+        // Start background music when entering the actual game
+        if (isPlaying) {
+          playBackgroundMusic();
+        }
       } else if (x >= 350 && x <= 450 && y >= 180 && y <= 360) {
         setSelectedCharacter('morpheus');
         setShowCharacterSelect(false);
+        // Start background music when entering the actual game
+        if (isPlaying) {
+          playBackgroundMusic();
+        }
       } else if (x >= 550 && x <= 650 && y >= 180 && y <= 360) {
         setSelectedCharacter('trinity');
         setShowCharacterSelect(false);
+        // Start background music when entering the actual game
+        if (isPlaying) {
+          playBackgroundMusic();
+        }
       }
     };
 
@@ -216,7 +266,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     return () => {
       canvas.removeEventListener('click', handleCanvasClick);
     };
-  }, [showCharacterSelect]);
+  }, [showCharacterSelect, isPlaying, playBackgroundMusic]);
 
   // Game loop
   const gameLoop = useCallback(() => {
@@ -293,6 +343,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
           const newCount = current + reachingBottom.length;
           if (newCount >= 5 && !gameOver) {
             setGameOver(true);
+            stopBackgroundMusic();
             if (onGameEnd) {
               onGameEnd(score);
             }
@@ -596,7 +647,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     });
 
     animationRef.current = requestAnimationFrame(gameLoop);
-  }, [isPlaying, gameOver, player, bullets, enemies, bonuses, floatingTexts, score, lastShot, lastEnemySpawn, lastBonusSpawn, enemiesPassed, selectedCharacter, onScoreUpdate, playShootSound]);
+  }, [isPlaying, gameOver, player, bullets, enemies, bonuses, floatingTexts, score, lastShot, lastEnemySpawn, lastBonusSpawn, enemiesPassed, selectedCharacter, onScoreUpdate, playShootSound, stopBackgroundMusic]);
 
   // Start/stop game loop
   useEffect(() => {
