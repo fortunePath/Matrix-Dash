@@ -253,12 +253,31 @@
     ;; Check tournament time has ended
     (asserts! (>= stacks-block-height (unwrap! (get end-block tournament) ERR-TOURNAMENT-NOT-FOUND)) ERR-TOURNAMENT-NOT-ENDED)
     
+    ;; Generate leaderboard before ending (simplified for now)
+    ;; (try! (generate-leaderboard tournament-id))
+    
     ;; Update tournament status
     (map-set tournaments tournament-id
       (merge tournament { status: "ended" })
     )
     
     (ok true)
+  )
+)
+
+;; 4a. AUTO END TOURNAMENT - Automatically end tournament if time expired
+(define-public (auto-end-tournament (tournament-id uint))
+  (let (
+    (tournament (unwrap! (map-get? tournaments tournament-id) ERR-TOURNAMENT-NOT-FOUND))
+  )
+    ;; Check tournament is active and time has ended
+    (if (and 
+          (is-eq (get status tournament) "active")
+          (>= stacks-block-height (unwrap! (get end-block tournament) ERR-TOURNAMENT-NOT-FOUND)))
+      ;; Just end tournament - prizes can be distributed separately
+      (end-tournament tournament-id)
+      ERR-TOURNAMENT-NOT-ENDED
+    )
   )
 )
 
@@ -277,27 +296,27 @@
     ;; Check prizes haven't been distributed yet
     (asserts! (not (is-eq (get status tournament) "distributed")) ERR-PRIZES-ALREADY-DISTRIBUTED)
     
-    ;; Only contract owner can distribute for now (in production, this could be automated)
-    (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-UNAUTHORIZED)
+    ;; Anyone can distribute prizes after tournament ends
+    ;; (Removed authorization check for automatic distribution)
     
-    ;; Calculate prize per winner
+    ;; Calculate equal prize per winner for now (can be improved later)
     (let ((prize-per-winner (/ winners-amount (len winners))))
       ;; Distribute to winners
       (try! (distribute-to-winners tournament-id winners prize-per-winner))
-      
-      ;; Add to treasury
-      (var-set treasury-balance (+ (var-get treasury-balance) treasury-amount))
-      
-      ;; Burn tokens (send to null address or keep track for burning mechanism)
-      (var-set total-burned (+ (var-get total-burned) burn-amount))
-      
-      ;; Update tournament status
-      (map-set tournaments tournament-id
-        (merge tournament { status: "distributed" })
-      )
-      
-      (ok true)
     )
+    
+    ;; Add to treasury
+    (var-set treasury-balance (+ (var-get treasury-balance) treasury-amount))
+    
+    ;; Burn tokens (send to null address or keep track for burning mechanism)
+    (var-set total-burned (+ (var-get total-burned) burn-amount))
+    
+    ;; Update tournament status
+    (map-set tournaments tournament-id
+      (merge tournament { status: "distributed" })
+    )
+    
+    (ok true)
   )
 )
 
@@ -352,6 +371,23 @@
   }
 )
 
+;; Get tournament winners (top 10% of participants)
+(define-read-only (get-tournament-winners (tournament-id uint))
+  (let (
+    (tournament (unwrap-panic (map-get? tournaments tournament-id)))
+    (participant-count (get participant-count tournament))
+    (winner-count (if (> (/ participant-count u10) u1) (/ participant-count u10) u1)) ;; Top 10%, minimum 1
+  )
+    ;; Return empty list for now - in production this would generate from leaderboard
+    (list)
+  )
+)
+
+;; Get all tournament participants for leaderboard generation
+(define-read-only (get-tournament-participants (tournament-id uint))
+  (ok (list)) ;; Placeholder - in production, you'd iterate through participants
+)
+
 ;; Check if tournament is active
 (define-read-only (is-tournament-active (tournament-id uint))
   (match (map-get? tournaments tournament-id)
@@ -400,7 +436,7 @@
   )
 )
 
-;; Distribute winnings to winners
+;; Distribute winnings to winners (equal distribution for now)
 (define-private (distribute-to-winners (tournament-id uint) (winners (list 100 principal)) (prize-per-winner uint))
   (fold distribute-single-winner winners (ok prize-per-winner))
 )
@@ -422,6 +458,8 @@
   )
 )
 
+
+
 ;; Update winner statistics
 (define-private (update-winner-stats (winner principal) (prize uint))
   (let (
@@ -436,6 +474,45 @@
         tournaments-won: (+ (get tournaments-won current-stats) u1)
       })
     )
+  )
+)
+
+;; Generate leaderboard for tournament
+(define-private (generate-leaderboard (tournament-id uint))
+  ;; For now, return success - full implementation would:
+  ;; 1. Get all participants and their best scores
+  ;; 2. Sort by score (highest first)
+  ;; 3. Assign ranks and populate tournament-leaderboard map
+  ;; 4. Update participant final-rank
+  (ok true)
+)
+
+;; Generate winner list from leaderboard (simplified)
+(define-private (generate-winner-list (tournament-id uint) (winner-count uint) (current-rank uint))
+  ;; Simplified - return empty list for now to avoid circular dependencies
+  ;; In production, this would iterate through the leaderboard
+  (list)
+)
+
+;; 6. CHECK AND AUTO-END TOURNAMENTS - Anyone can call this to end expired tournaments
+(define-public (check-and-end-expired-tournaments (tournament-ids (list 10 uint)))
+  (ok (map check-single-tournament tournament-ids))
+)
+
+;; Helper function to check and auto-end a single tournament
+(define-private (check-single-tournament (tournament-id uint))
+  (match (map-get? tournaments tournament-id)
+    tournament
+      (if (and 
+            (is-eq (get status tournament) "active")
+            (>= stacks-block-height (unwrap-panic (get end-block tournament))))
+        (match (end-tournament tournament-id)
+          success true
+          error false
+        )
+        false
+      )
+    false
   )
 )
 
