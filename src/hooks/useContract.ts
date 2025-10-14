@@ -1,4 +1,4 @@
-import { useWallet } from './useWallet';
+import { useWallet } from '@/contexts/WalletContext';
 import { contract } from '@/lib/contract';
 
 export const useContract = () => {

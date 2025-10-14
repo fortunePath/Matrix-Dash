@@ -13,14 +13,14 @@ export const contractAPI = {
   // Read-only contract calls that don't require wallet connection
   getTournament: async (tournamentId: number) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_ADDRESS}/get-tournament`, {
+      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-tournament`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: [`0x${tournamentId.toString(16).padStart(32, '0')}`] // Convert to uint
+          arguments: [`0x${tournamentId.toString(16).padStart(16, '0')}`] // Convert to uint
         })
       });
       
@@ -28,7 +28,7 @@ export const contractAPI = {
         const data = await response.json();
         return data.result;
       } else {
-        console.warn('Failed to fetch tournament data');
+        console.warn('Failed to fetch tournament data, status:', response.status);
         return null;
       }
     } catch (error) {
@@ -39,7 +39,7 @@ export const contractAPI = {
 
   getParticipant: async (tournamentId: number, playerAddress: string) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_ADDRESS}/get-participant`, {
+      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-participant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,8 +47,8 @@ export const contractAPI = {
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
           arguments: [
-            `0x${tournamentId.toString(16).padStart(32, '0')}`, // Convert to uint
-            `0x${playerAddress}` // Convert to principal
+            `0x${tournamentId.toString(16).padStart(16, '0')}`, // Convert to uint
+            `'${playerAddress}` // Convert to principal
           ]
         })
       });
@@ -57,7 +57,7 @@ export const contractAPI = {
         const data = await response.json();
         return data.result;
       } else {
-        console.warn('Failed to fetch participant data');
+        console.warn('Failed to fetch participant data, status:', response.status);
         return null;
       }
     } catch (error) {
@@ -68,14 +68,14 @@ export const contractAPI = {
 
   getPlayerStats: async (playerAddress: string) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_ADDRESS}/get-player-stats`, {
+      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-player-stats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: [`0x${playerAddress}`] // Convert to principal
+          arguments: [`'${playerAddress}`] // Convert to principal
         })
       });
       
@@ -83,7 +83,7 @@ export const contractAPI = {
         const data = await response.json();
         return data.result;
       } else {
-        console.warn('Failed to fetch player stats');
+        console.warn('Failed to fetch player stats, status:', response.status);
         return null;
       }
     } catch (error) {
@@ -94,7 +94,7 @@ export const contractAPI = {
 
   getContractStats: async () => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_ADDRESS}/get-contract-stats`, {
+      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-contract-stats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ export const contractAPI = {
         const data = await response.json();
         return data.result;
       } else {
-        console.warn('Failed to fetch contract stats');
+        console.warn('Failed to fetch contract stats, status:', response.status);
         return null;
       }
     } catch (error) {
@@ -120,14 +120,14 @@ export const contractAPI = {
 
   isTournamentActive: async (tournamentId: number) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_ADDRESS}/is-tournament-active`, {
+      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/is-tournament-active`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: [`0x${tournamentId.toString(16).padStart(32, '0')}`] // Convert to uint
+          arguments: [`0x${tournamentId.toString(16).padStart(16, '0')}`] // Convert to uint
         })
       });
       
@@ -135,7 +135,7 @@ export const contractAPI = {
         const data = await response.json();
         return data.result;
       } else {
-        console.warn('Failed to check tournament status');
+        console.warn('Failed to check tournament status, status:', response.status);
         return false;
       }
     } catch (error) {

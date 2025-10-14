@@ -15,34 +15,57 @@ const Play = () => {
   
   const [gameStatus, setGameStatus] = useState<'lobby' | 'playing' | 'ended'>('lobby');
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(3600); // Mock 1 hour
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [leaderboard, setLeaderboard] = useState<Array<{ rank: number; address: string; score: number }>>([]);
   
   const handleScoreUpdate = (newScore: number) => {
     setScore(newScore);
   };
 
   useEffect(() => {
-    if (gameStatus === 'playing') {
+    if (tournament && tournament.status === 'active') {
+      // Calculate time left based on tournament end block
+      if (tournament.endBlock) {
+        // This is a simplified calculation - in reality you'd need to fetch current block height
+        const estimatedBlocksLeft = tournament.endBlock - (tournament.startBlock || 0);
+        const estimatedSecondsLeft = estimatedBlocksLeft * 10; // Assuming ~10 seconds per block
+        setTimeLeft(Math.max(0, estimatedSecondsLeft));
+      }
+    }
+  }, [tournament]);
+
+  useEffect(() => {
+    if (gameStatus === 'playing' && timeLeft > 0) {
       const interval = setInterval(() => {
         setTimeLeft(prev => Math.max(0, prev - 1));
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [gameStatus]);
+  }, [gameStatus, timeLeft]);
+
+  useEffect(() => {
+    // Fetch leaderboard data from contract
+    const fetchLeaderboard = async () => {
+      if (tournament && tournamentId) {
+        try {
+          // TODO: Implement actual leaderboard fetching from contract
+          // For now, show empty until we have real participants with scores
+          setLeaderboard([]);
+        } catch (error) {
+          console.error('Error fetching leaderboard:', error);
+          setLeaderboard([]);
+        }
+      }
+    };
+
+    fetchLeaderboard();
+  }, [tournament, tournamentId]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
-  const mockLeaderboard = [
-    { rank: 1, address: 'SP2J6...ABCD', score: 15420 },
-    { rank: 2, address: 'SP3K9...WXYZ', score: 14850 },
-    { rank: 3, address: 'SP1A2...EFGH', score: 13200 },
-    { rank: 4, address: 'SP9X8...IJKL', score: 12100 },
-    { rank: 5, address: 'SP7Y5...MNOP', score: 11500 },
-  ];
 
   if (!tournament) {
     return (
@@ -116,17 +139,24 @@ const Play = () => {
             {/* Participant List */}
             <div className="mt-8 max-h-64 overflow-y-auto">
               <div className="text-left space-y-2">
-                {Array.from({ length: tournament.participantCount }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-card/30 border border-primary/20 rounded p-3 font-mono text-sm animate-fade-in"
-                    style={{ animationDelay: `${i * 0.1}s` }}
-                  >
-                    <span className="text-primary">RUNNER_{i + 1}</span>
-                    <span className="text-muted-foreground mx-2">|</span>
-                    <span className="text-primary">READY</span>
+                {tournament.participantCount > 0 ? (
+                  Array.from({ length: tournament.participantCount }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-card/30 border border-primary/20 rounded p-3 font-mono text-sm animate-fade-in"
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    >
+                      <span className="text-primary">RUNNER_{i + 1}</span>
+                      <span className="text-muted-foreground mx-2">|</span>
+                      <span className="text-primary">READY</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-sm text-muted-foreground mb-2">No participants yet</div>
+                    <div className="text-xs text-muted-foreground">Waiting for runners to join...</div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
@@ -169,7 +199,7 @@ const Play = () => {
               <div className="flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-secondary" />
                 <span className="text-lg font-bold font-mono text-secondary">
-                  RANK #5
+                  RANK #-
                 </span>
               </div>
             </div>
@@ -245,28 +275,35 @@ const Play = () => {
           </GlitchText>
 
           <div className="space-y-3">
-            {mockLeaderboard.map((entry) => (
-              <div
-                key={entry.rank}
-                className={`p-3 rounded border transition-all ${
-                  entry.rank <= 3
-                    ? 'border-secondary bg-secondary/10 matrix-glow-green'
-                    : 'border-primary/20 bg-card/30'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-lg font-bold text-primary">
-                    #{entry.rank}
-                  </span>
-                  <span className="text-xl font-bold text-primary">
-                    {entry.score.toLocaleString()}
-                  </span>
-                </div>
-                <div className="text-xs font-mono text-muted-foreground">
-                  {entry.address}
-                </div>
+            {leaderboard.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-sm text-muted-foreground mb-2">No scores yet</div>
+                <div className="text-xs text-muted-foreground">Be the first to play!</div>
               </div>
-            ))}
+            ) : (
+              leaderboard.map((entry) => (
+                <div
+                  key={entry.rank}
+                  className={`p-3 rounded border transition-all ${
+                    entry.rank <= 3
+                      ? 'border-secondary bg-secondary/10 matrix-glow-green'
+                      : 'border-primary/20 bg-card/30'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-lg font-bold text-primary">
+                      #{entry.rank}
+                    </span>
+                    <span className="text-xl font-bold text-primary">
+                      {entry.score.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-xs font-mono text-muted-foreground">
+                    {entry.address}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Prize Distribution */}

@@ -6,10 +6,12 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Rocket } from 'lucide-react';
 import { useTournaments } from '@/hooks/useTournaments';
+import { useWallet } from '@/contexts/WalletContext';
 import { toast } from 'sonner';
 
 export const CreateTournamentForm = () => {
   const { createTournament } = useTournaments();
+  const { isConnected, walletAddress, stxBalance } = useWallet();
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
     minEntryPrice: 1,
@@ -21,6 +23,11 @@ export const CreateTournamentForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!isConnected) {
+      toast.error('Please connect your Leather wallet first');
+      return;
+    }
+    
     if (formData.poolContribution < 5) {
       toast.error('Pool contribution must be ≥ 5 STX');
       return;
@@ -31,16 +38,43 @@ export const CreateTournamentForm = () => {
       return;
     }
 
-    setIsCreating(true);
-    const result = await createTournament(formData);
-    setIsCreating(false);
-
-    if (result.success) {
-      toast.success(`Tournament ${result.tournamentId} created! 🎮`, {
-        description: 'Waiting for runners to jack in...',
+    // Check if wallet has sufficient balance (pool contribution + estimated fees)
+    const requiredBalance = formData.poolContribution + 0.1; // Add 0.1 STX for transaction fees
+    if (stxBalance < requiredBalance) {
+      toast.error(`Insufficient balance. You need at least ${requiredBalance} STX (${formData.poolContribution} STX contribution + ~0.1 STX fees)`, {
+        description: `Current balance: ${stxBalance} STX`,
       });
-    } else {
-      toast.error('Failed to create tournament');
+      return;
+    }
+
+    setIsCreating(true);
+    
+    try {
+      const result = await createTournament(formData);
+      
+      if (result.success) {
+        toast.success(`Tournament created successfully! 🎮`, {
+          description: 'Transaction submitted to blockchain',
+        });
+        // Reset form
+        setFormData({
+          minEntryPrice: 1,
+          poolContribution: 5,
+          targetPool: 10,
+          duration: 1008,
+        });
+      } else {
+        toast.error('Failed to create tournament', {
+          description: result.error || 'Unknown error occurred',
+        });
+      }
+    } catch (error: any) {
+      console.error('Tournament creation error:', error);
+      toast.error('Failed to create tournament', {
+        description: error.message || 'Unknown error occurred',
+      });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -65,7 +99,7 @@ export const CreateTournamentForm = () => {
               step="0.1"
               min="1"
               value={formData.minEntryPrice}
-              onChange={(e) => setFormData({ ...formData, minEntryPrice: parseFloat(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, minEntryPrice: parseFloat(e.target.value) || 0 })}
               className="terminal-input"
             />
             <p className="text-xs text-muted-foreground mt-1">≥ 1 STX</p>
@@ -81,7 +115,7 @@ export const CreateTournamentForm = () => {
               step="1"
               min="5"
               value={formData.poolContribution}
-              onChange={(e) => setFormData({ ...formData, poolContribution: parseFloat(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, poolContribution: parseFloat(e.target.value) || 0 })}
               className="terminal-input"
             />
             <p className="text-xs text-muted-foreground mt-1">≥ 5 STX</p>
@@ -97,7 +131,7 @@ export const CreateTournamentForm = () => {
               step="1"
               min="10"
               value={formData.targetPool}
-              onChange={(e) => setFormData({ ...formData, targetPool: parseFloat(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, targetPool: parseFloat(e.target.value) || 0 })}
               className="terminal-input"
             />
             <p className="text-xs text-muted-foreground mt-1">≥ 10 STX</p>
@@ -113,7 +147,7 @@ export const CreateTournamentForm = () => {
               step="144"
               min="144"
               value={formData.duration}
-              onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
               className="terminal-input"
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -124,6 +158,10 @@ export const CreateTournamentForm = () => {
 
         {/* Visual Calculator */}
         <div className="bg-muted/20 rounded-lg p-4 space-y-2 border border-primary/30">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Wallet balance:</span>
+            <span className="font-bold text-secondary">{stxBalance} STX</span>
+          </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Your contribution:</span>
             <span className="font-bold text-primary">{formData.poolContribution} STX</span>
@@ -151,9 +189,15 @@ export const CreateTournamentForm = () => {
           variant="default"
           size="xl"
           className="w-full gap-2"
-          disabled={isCreating}
+          disabled={isCreating || !isConnected}
         >
-          {isCreating ? 'DEPLOYING...' : 'DEPLOY TOURNAMENT'}
+          <Rocket className="w-5 h-5" />
+          {!isConnected 
+            ? 'CONNECT WALLET TO DEPLOY' 
+            : isCreating 
+            ? 'DEPLOYING...' 
+            : 'DEPLOY TOURNAMENT'
+          }
         </NeonButton>
       </form>
     </HolographicCard>

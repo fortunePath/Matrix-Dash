@@ -6,7 +6,7 @@ import { TournamentCard } from '@/components/TournamentCard';
 import { EntryModal } from '@/components/EntryModal';
 import { GlitchText } from '@/components/GlitchText';
 import { useTournaments } from '@/hooks/useTournaments';
-import { useWallet } from '@/hooks/useWallet';
+import { useWallet } from '@/contexts/WalletContext';
 import { Tournament } from '@/hooks/useTournaments';
 import { Link } from 'react-router-dom';
 import { NeonButton } from '@/components/ui/neon-button';

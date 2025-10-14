@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { contractAPI } from '@/lib/contract';
+import { useContract } from './useContract';
 
 export interface Tournament {
   id: string;
@@ -15,66 +17,58 @@ export interface Tournament {
   createdAt: number;
 }
 
-// Mock data for development
-const mockTournaments: Tournament[] = [
-  {
-    id: 'TRN_001',
-    creator: 'SP2J6...ABCD',
-    status: 'active',
-    minEntryPrice: 1,
-    poolContribution: 5,
-    targetPool: 10,
-    currentPool: 25,
-    participantCount: 12,
-    duration: 1008,
-    startBlock: 100000,
-    endBlock: 101008,
-    createdAt: Date.now() - 86400000,
-  },
-  {
-    id: 'TRN_002',
-    creator: 'SP3K9...WXYZ',
-    status: 'pending',
-    minEntryPrice: 2,
-    poolContribution: 10,
-    targetPool: 20,
-    currentPool: 12,
-    participantCount: 4,
-    duration: 1008,
-    createdAt: Date.now() - 43200000,
-  },
-  {
-    id: 'TRN_003',
-    creator: 'SP1A2...EFGH',
-    status: 'active',
-    minEntryPrice: 0.5,
-    poolContribution: 3,
-    targetPool: 5,
-    currentPool: 8,
-    participantCount: 12,
-    duration: 504,
-    startBlock: 99500,
-    endBlock: 100004,
-    createdAt: Date.now() - 172800000,
-  },
-];
-
 export const useTournaments = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { createTournament: createTournamentContract, enterTournament: enterTournamentContract } = useContract();
 
   useEffect(() => {
-    // Simulate API call
     const fetchTournaments = async () => {
       try {
         setLoading(true);
-        // TODO: Replace with actual Stacks.js blockchain call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setTournaments(mockTournaments);
         setError(null);
+        
+        // Get contract stats to determine how many tournaments exist
+        const stats = await contractAPI.getContractStats();
+        
+        if (stats && stats.next_tournament_id) {
+          const tournamentPromises = [];
+          const nextId = Number(stats.next_tournament_id);
+          
+          // Fetch all tournaments from 1 to nextId-1
+          for (let i = 1; i < nextId; i++) {
+            tournamentPromises.push(contractAPI.getTournament(i));
+          }
+          
+          const tournamentResults = await Promise.all(tournamentPromises);
+          
+          const validTournaments: Tournament[] = tournamentResults
+            .filter(result => result !== null)
+            .map((result, index) => ({
+              id: (index + 1).toString(),
+              creator: result.creator || 'Unknown',
+              status: result.status || 'pending',
+              minEntryPrice: Number(result.min_entry_price || 0) / 1000000, // Convert from microSTX
+              poolContribution: Number(result.pool_contribution || 0) / 1000000,
+              targetPool: Number(result.target_pool || 0) / 1000000,
+              currentPool: Number(result.current_pool || 0) / 1000000,
+              participantCount: Number(result.participant_count || 0),
+              duration: Number(result.duration || 0),
+              startBlock: result.start_block ? Number(result.start_block) : undefined,
+              endBlock: result.end_block ? Number(result.end_block) : undefined,
+              createdAt: result.created_at ? Number(result.created_at) : Date.now(),
+            }));
+          
+          setTournaments(validTournaments);
+        } else {
+          // No tournaments exist yet
+          setTournaments([]);
+        }
       } catch (err) {
-        setError('Failed to fetch tournaments');
+        console.error('Error fetching tournaments:', err);
+        setError('Failed to fetch tournaments from blockchain');
+        setTournaments([]);
       } finally {
         setLoading(false);
       }
@@ -90,52 +84,47 @@ export const useTournaments = () => {
     duration: number;
   }) => {
     try {
-      // TODO: Call Clarity contract create-tournament
-      console.log('Creating tournament:', params);
-      
-      const newTournament: Tournament = {
-        id: `TRN_${String(tournaments.length + 1).padStart(3, '0')}`,
-        creator: 'SP_USER...1234',
-        status: 'pending',
-        ...params,
-        currentPool: params.poolContribution,
-        participantCount: 1,
-        createdAt: Date.now(),
-      };
+      const result = await createTournamentContract(
+        Math.round(params.minEntryPrice * 1000000), // Convert to microSTX
+        Math.round(params.poolContribution * 1000000),
+        Math.round(params.targetPool * 1000000),
+        params.duration
+      );
 
-      setTournaments(prev => [newTournament, ...prev]);
-      return { success: true, tournamentId: newTournament.id };
-    } catch (err) {
-      return { success: false, error: 'Failed to create tournament' };
+      if (result.success) {
+        // Refresh tournaments list
+        setTimeout(() => {
+          window.location.reload(); // Simple refresh for now
+        }, 2000);
+        
+        return { success: true, tournamentId: result.txId };
+      } else {
+        return { success: false, error: result.error || 'Failed to create tournament' };
+      }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to create tournament' };
     }
   };
 
   const enterTournament = async (tournamentId: string, entryAmount: number) => {
     try {
-      // TODO: Call Clarity contract enter-tournament
-      console.log('Entering tournament:', tournamentId, entryAmount);
+      const result = await enterTournamentContract(
+        Number(tournamentId),
+        Math.round(entryAmount * 1000000) // Convert to microSTX
+      );
 
-      setTournaments(prev => prev.map(t => {
-        if (t.id === tournamentId) {
-          const newPool = t.currentPool + entryAmount;
-          const newStatus = newPool >= t.targetPool ? 'active' : t.status;
-          return {
-            ...t,
-            currentPool: newPool,
-            participantCount: t.participantCount + 1,
-            status: newStatus,
-            ...(newStatus === 'active' && !t.startBlock ? {
-              startBlock: 100000,
-              endBlock: 100000 + t.duration,
-            } : {}),
-          };
-        }
-        return t;
-      }));
-
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: 'Failed to enter tournament' };
+      if (result.success) {
+        // Refresh tournaments list
+        setTimeout(() => {
+          window.location.reload(); // Simple refresh for now
+        }, 2000);
+        
+        return { success: true };
+      } else {
+        return { success: false, error: result.error || 'Failed to enter tournament' };
+      }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to enter tournament' };
     }
   };
 

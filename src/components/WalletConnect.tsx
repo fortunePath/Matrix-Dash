@@ -1,6 +1,6 @@
 import { Wallet, LogOut, ExternalLink } from 'lucide-react';
 import { NeonButton } from './ui/neon-button';
-import { useWallet } from '@/hooks/useWallet';
+import { useWallet } from '@/contexts/WalletContext';
 import { useState } from 'react';
 
 export const WalletConnect = () => {

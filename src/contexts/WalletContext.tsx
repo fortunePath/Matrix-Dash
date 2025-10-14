@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Leather wallet provider types
 declare global {
@@ -9,7 +9,37 @@ declare global {
   }
 }
 
+interface WalletContextType {
+  isConnected: boolean;
+  walletAddress: string | null;
+  stxBalance: number;
+  isLeatherInstalled: boolean;
+  connectWallet: () => Promise<{ success: boolean; error?: string }>;
+  disconnectWallet: () => void;
+  callContract: (
+    functionName: string,
+    functionArgs: any[],
+    contractAddress: string,
+    contractName: string
+  ) => Promise<{ success: boolean; txId?: string; error?: string }>;
+  transferSTX: (recipient: string, amount: number, memo?: string) => Promise<{ success: boolean; txId?: string; error?: string }>;
+}
+
+const WalletContext = createContext<WalletContextType | undefined>(undefined);
+
 export const useWallet = () => {
+  const context = useContext(WalletContext);
+  if (context === undefined) {
+    throw new Error('useWallet must be used within a WalletProvider');
+  }
+  return context;
+};
+
+interface WalletProviderProps {
+  children: ReactNode;
+}
+
+export const WalletProvider = ({ children }: WalletProviderProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [stxBalance, setStxBalance] = useState(0);
@@ -161,21 +191,21 @@ export const useWallet = () => {
 
       // Prepare contract call parameters for Leather
       const contractCallParams = {
-        contractAddress,
-        contractName,
+        contract: `${contractAddress}.${contractName}`,
         functionName,
         functionArgs: functionArgs.map(arg => {
-          // Convert arguments to proper format
+          // Convert arguments to proper Clarity format for Leather
           if (typeof arg === 'number') {
-            return { type: 'uint', value: arg.toString() };
+            // Convert number to hex uint format
+            return `0x${arg.toString(16).padStart(16, '0')}`;
           } else if (typeof arg === 'string') {
-            return { type: 'principal', value: arg };
+            return `"${arg}"`;
           } else if (Array.isArray(arg)) {
-            return { type: 'list', value: arg };
+            return `(list ${arg.map(item => typeof item === 'number' ? `0x${item.toString(16).padStart(16, '0')}` : `"${item}"`).join(' ')})`;
           }
           return arg;
         }),
-        postConditions: [], // Add post conditions if needed
+        postConditions: [],
         network: 'testnet' // or 'mainnet'
       };
 
@@ -231,7 +261,7 @@ export const useWallet = () => {
     }
   };
 
-  return {
+  const value = {
     isConnected,
     walletAddress,
     stxBalance,
@@ -241,4 +271,10 @@ export const useWallet = () => {
     callContract,
     transferSTX,
   };
+
+  return (
+    <WalletContext.Provider value={value}>
+      {children}
+    </WalletContext.Provider>
+  );
 };
