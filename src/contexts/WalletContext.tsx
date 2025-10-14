@@ -182,36 +182,18 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
         throw new Error('Wallet not connected');
       }
 
-      // Convert arguments to proper Clarity format for Leather
-      const processedArgs = functionArgs.map(arg => {
-        if (typeof arg === 'number') {
-          // For Leather, use simple hex format without padding
-          const positiveInt = Math.floor(Math.abs(arg));
-          return `0x${positiveInt.toString(16)}`;
-        } else if (typeof arg === 'string') {
-          return `"${arg}"`;
-        } else if (Array.isArray(arg)) {
-          return `(list ${arg.map(item => {
-            if (typeof item === 'number') {
-              const positiveInt = Math.floor(Math.abs(item));
-              return `0x${positiveInt.toString(16)}`;
-            }
-            return `"${item}"`;
-          }).join(' ')})`;
-        }
-        return arg;
-      });
-
-      // Prepare contract call parameters for Leather
-      const contractCallParams = {
+      // Use Clarity CV format for function arguments
+      const response = await window.LeatherProvider.request('stx_callContract', {
         contract: `${contractAddress}.${contractName}`,
-        functionName,
-        functionArgs: processedArgs,
-        postConditions: [],
-        network: 'testnet' // or 'mainnet'
-      };
-
-      const response = await window.LeatherProvider.request('stx_callContract', contractCallParams);
+        functionName: functionName,
+        functionArgs: functionArgs.map(arg => {
+          if (typeof arg === 'number') {
+            // Use hex format for uint
+            return `0x${arg.toString(16).padStart(16, '0')}`;
+          }
+          return String(arg);
+        })
+      });
 
       if (response && response.result) {
         return { 
