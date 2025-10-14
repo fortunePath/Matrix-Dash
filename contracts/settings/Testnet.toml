@@ -1,7 +1,0 @@
-[network]
-name = "testnet"
-stacks_node_rpc_address = "https://api.testnet.hiro.so"
-deployment_fee_rate = 10
-
-[accounts.deployer]
-mnemonic = "gather insect royal fatigue stadium village invite floor trash aim diary chief pledge decrease dial neck snake crime fiber finish youth expose sadness child"
