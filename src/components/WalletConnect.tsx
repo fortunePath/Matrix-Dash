@@ -54,7 +54,7 @@ export const WalletConnect = () => {
     <div className="flex items-center gap-4">
       <div className="text-right">
         <div className="text-sm text-muted-foreground">Balance</div>
-        <div className="text-lg font-bold text-primary matrix-glow">
+        <div className="text-lg font-bold text-primary">
           {stxBalance.toFixed(2)} STX
         </div>
       </div>

@@ -71,11 +71,46 @@ export const useWallet = () => {
           
           // Try to get STX balance
           try {
-            // For now, set a default balance since balance fetching might need different approach
-            setStxBalance(100);
+            const balanceResponse = await window.LeatherProvider.request('stx_getBalance', {
+              address: stacksAddress.address
+            });
+            
+            console.log('Balance response:', balanceResponse);
+            
+            if (balanceResponse && balanceResponse.result) {
+              // Convert microSTX to STX
+              const balance = Number(balanceResponse.result.balance || balanceResponse.result.total || 0) / 1000000;
+              setStxBalance(balance);
+            } else if (balanceResponse && typeof balanceResponse.balance !== 'undefined') {
+              const balance = Number(balanceResponse.balance) / 1000000;
+              setStxBalance(balance);
+            } else {
+              // Fallback: fetch balance using Stacks API
+              const apiResponse = await fetch(`https://stacks-node-api.testnet.stacks.co/extended/v1/address/${stacksAddress.address}/balances`);
+              if (apiResponse.ok) {
+                const balanceData = await apiResponse.json();
+                const balance = Number(balanceData.stx.balance) / 1000000;
+                setStxBalance(balance);
+              } else {
+                setStxBalance(0);
+              }
+            }
           } catch (balanceError) {
             console.warn('Could not fetch STX balance:', balanceError);
-            setStxBalance(0);
+            // Fallback: fetch balance using Stacks API
+            try {
+              const apiResponse = await fetch(`https://stacks-node-api.testnet.stacks.co/extended/v1/address/${stacksAddress.address}/balances`);
+              if (apiResponse.ok) {
+                const balanceData = await apiResponse.json();
+                const balance = Number(balanceData.stx.balance) / 1000000;
+                setStxBalance(balance);
+              } else {
+                setStxBalance(0);
+              }
+            } catch (apiError) {
+              console.error('Failed to fetch balance from API:', apiError);
+              setStxBalance(0);
+            }
           }
           
           return { success: true };
