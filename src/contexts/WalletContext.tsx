@@ -182,13 +182,18 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
         throw new Error('Wallet not connected');
       }
 
-      // Use Clarity CV format for function arguments
+      console.log('Contract call details:', {
+        contract: `${contractAddress}.${contractName}`,
+        functionName,
+        functionArgs,
+        walletAddress
+      });
+
       const response = await window.LeatherProvider.request('stx_callContract', {
         contract: `${contractAddress}.${contractName}`,
         functionName: functionName,
         functionArgs: functionArgs.map(arg => {
           if (typeof arg === 'number') {
-            // Use hex format for uint
             return `0x${arg.toString(16).padStart(16, '0')}`;
           }
           return String(arg);
