@@ -67,19 +67,86 @@ const Play = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Always show test game if no tournament or tournament not found
   if (!tournament) {
     return (
-      <div className="min-h-screen flex items-center justify-center scanlines">
+      <div className="min-h-screen scanlines">
         <MatrixBackground />
-        <div className="relative z-10 text-center">
-          <GlitchText as="h1" className="text-4xl mb-8 text-primary">
-            TOURNAMENT NOT FOUND
-          </GlitchText>
+        
+        <div className="container mx-auto px-4 py-8 relative z-10">
           <Link to="/tournaments">
-            <NeonButton variant="default">
-              BACK TO TOURNAMENTS
+            <NeonButton variant="ghost" className="gap-2 mb-6">
+              <ArrowLeft className="w-4 h-4" />
+              EXIT MATRIX
             </NeonButton>
           </Link>
+
+          <div className="text-center mb-8">
+            <GlitchText as="h1" className="text-5xl mb-4 text-primary">
+              TEST GAME MODE
+            </GlitchText>
+            <p className="text-lg text-muted-foreground">
+              Practice your skills before entering a tournament
+            </p>
+          </div>
+
+          <div className="flex items-center justify-center">
+            <div className="w-full max-w-4xl">
+              {gameStatus === 'lobby' && (
+                <div className="aspect-video bg-gradient-to-br from-background via-primary/5 to-secondary/5 rounded-lg border-2 neon-border matrix-glow flex flex-col items-center justify-center">
+                  <GlitchText as="h2" className="text-4xl mb-8 text-primary">
+                    READY TO ENTER THE MATRIX?
+                  </GlitchText>
+                  <NeonButton
+                    size="xl"
+                    variant="secondary"
+                    onClick={() => setGameStatus('playing')}
+                    className="gap-2"
+                  >
+                    <Zap className="w-6 h-6" />
+                    START TEST GAME
+                  </NeonButton>
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Use ARROW KEYS to move, SPACEBAR to shoot
+                  </p>
+                </div>
+              )}
+
+              {gameStatus === 'playing' && (
+                <div className="w-full">
+                  <SimpleMatrixGame 
+                    onScoreUpdate={handleScoreUpdate}
+                    isPlaying={gameStatus === 'playing'}
+                  />
+                  <div className="text-center mt-4">
+                    <NeonButton
+                      variant="ghost"
+                      onClick={() => setGameStatus('lobby')}
+                      className="text-sm"
+                    >
+                      RESTART GAME
+                    </NeonButton>
+                  </div>
+                </div>
+              )}
+              
+              {gameStatus === 'ended' && (
+                <div className="aspect-video bg-gradient-to-br from-background via-primary/5 to-secondary/5 rounded-lg border-2 neon-border matrix-glow flex flex-col items-center justify-center">
+                  <GlitchText as="h2" className="text-4xl mb-4 text-primary">
+                    TEST COMPLETED
+                  </GlitchText>
+                  <p className="text-xl text-secondary mb-8">Final Score: {score.toLocaleString()}</p>
+                  <NeonButton
+                    size="xl"
+                    variant="default"
+                    onClick={() => setGameStatus('lobby')}
+                  >
+                    PLAY AGAIN
+                  </NeonButton>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );

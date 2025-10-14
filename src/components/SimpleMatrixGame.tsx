@@ -200,10 +200,13 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       // Check which character was clicked (character areas: 150-250, 350-450, 550-650)
       if (x >= 150 && x <= 250 && y >= 180 && y <= 360) {
         setSelectedCharacter('neo');
+        setShowCharacterSelect(false);
       } else if (x >= 350 && x <= 450 && y >= 180 && y <= 360) {
         setSelectedCharacter('morpheus');
+        setShowCharacterSelect(false);
       } else if (x >= 550 && x <= 650 && y >= 180 && y <= 360) {
         setSelectedCharacter('trinity');
+        setShowCharacterSelect(false);
       }
     };
 

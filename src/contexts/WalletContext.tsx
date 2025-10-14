@@ -182,29 +182,31 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
         throw new Error('Wallet not connected');
       }
 
-      console.log('Calling contract function:', { 
-        functionName, 
-        functionArgs, 
-        contractAddress, 
-        contractName 
+      // Convert arguments to proper Clarity format for Leather
+      const processedArgs = functionArgs.map(arg => {
+        if (typeof arg === 'number') {
+          // For Leather, use simple hex format without padding
+          const positiveInt = Math.floor(Math.abs(arg));
+          return `0x${positiveInt.toString(16)}`;
+        } else if (typeof arg === 'string') {
+          return `"${arg}"`;
+        } else if (Array.isArray(arg)) {
+          return `(list ${arg.map(item => {
+            if (typeof item === 'number') {
+              const positiveInt = Math.floor(Math.abs(item));
+              return `0x${positiveInt.toString(16)}`;
+            }
+            return `"${item}"`;
+          }).join(' ')})`;
+        }
+        return arg;
       });
 
       // Prepare contract call parameters for Leather
       const contractCallParams = {
         contract: `${contractAddress}.${contractName}`,
         functionName,
-        functionArgs: functionArgs.map(arg => {
-          // Convert arguments to proper Clarity format for Leather
-          if (typeof arg === 'number') {
-            // Convert number to hex uint format
-            return `0x${arg.toString(16).padStart(16, '0')}`;
-          } else if (typeof arg === 'string') {
-            return `"${arg}"`;
-          } else if (Array.isArray(arg)) {
-            return `(list ${arg.map(item => typeof item === 'number' ? `0x${item.toString(16).padStart(16, '0')}` : `"${item}"`).join(' ')})`;
-          }
-          return arg;
-        }),
+        functionArgs: processedArgs,
         postConditions: [],
         network: 'testnet' // or 'mainnet'
       };
