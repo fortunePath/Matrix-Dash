@@ -25,3 +25,23 @@ dist-ssr
 
 # Contract settings with private keys
 contracts/settings/
+
+# Clarinet/Stacks specific
+contracts/.cache/
+contracts/node_modules/
+contracts/coverage/
+*.clarinet-cache
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Test coverage
+coverage/
+
+# Build artifacts
+contracts/deployments/*.yaml
+!contracts/deployments/default.*.yaml
