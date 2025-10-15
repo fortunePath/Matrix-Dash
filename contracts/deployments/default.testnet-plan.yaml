@@ -9,10 +9,10 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: main
+            contract-name: main2
             expected-sender: STNR55Y7QR9QHY5HW83D6JCEDWSX01P1R14ZQ27V
-            cost: 509941911
-            path: contracts/main.clar
+            cost: 202810
+            path: contracts/main2.clar
             anchor-block-only: true
             clarity-version: 3
       epoch: "3.2"

@@ -12,6 +12,7 @@
 (define-constant BURN-PERCENTAGE u10) ;; 10% burned for deflation
 (define-constant MIN-TOURNAMENT-DURATION u144) ;; ~1 day in blocks (10 min blocks)
 (define-constant MAX-TOURNAMENT-DURATION u1008) ;; ~1 week in blocks
+(define-constant GAME-SERVER-PUBKEY 0x0381c2f4f90a5a0717f3130ce0c16c3c2c7b3e4eab94a8a9e5e4b1f6f3f7e8c9d2) ;; Game server public key for score verification
 
 ;; error codes
 (define-constant ERR-INSUFFICIENT-ENTRY-AMOUNT (err u100))
@@ -27,6 +28,8 @@
 (define-constant ERR-PRIZES-ALREADY-DISTRIBUTED (err u110))
 (define-constant ERR-INVALID-SCORE (err u111))
 (define-constant ERR-POOL-TARGET-REACHED (err u112))
+(define-constant ERR-INVALID-SCORE-PROOF (err u113))
+(define-constant ERR-SCORE-TOO-RECENT (err u114))
 
 ;; data vars
 (define-data-var contract-owner principal tx-sender)
@@ -67,7 +70,9 @@
   { tournament-id: uint, player: principal, game-number: uint }
   {
     score: uint,
-    submitted-at: uint
+    submitted-at: uint,
+    score-hash: (buff 32),
+    signature: (buff 65)
   }
 )
 
@@ -199,12 +204,13 @@
   )
 )
 
-;; 3. SUBMIT SCORE - Players submit their game scores during active tournament
-(define-public (submit-score (tournament-id uint) (score uint))
+;; 3. SUBMIT SCORE - Players submit their game scores during active tournament with cryptographic proof
+(define-public (submit-score (tournament-id uint) (score uint) (game-session-hash (buff 32)) (signature (buff 65)))
   (let (
     (player tx-sender)
     (tournament (unwrap! (map-get? tournaments tournament-id) ERR-TOURNAMENT-NOT-FOUND))
     (participant (unwrap! (map-get? tournament-participants { tournament-id: tournament-id, player: player }) ERR-UNAUTHORIZED))
+    (last-submission-block (get-last-submission-block tournament-id player))
   )
     ;; Check tournament is active
     (asserts! (is-eq (get status tournament) "active") ERR-TOURNAMENT-NOT-ACTIVE)
@@ -215,13 +221,21 @@
     ;; Validate score (must be positive)
     (asserts! (> score u0) ERR-INVALID-SCORE)
     
+    ;; Rate limiting: prevent spam submissions (minimum 10 blocks between submissions)
+    (asserts! (> (- stacks-block-height last-submission-block) u10) ERR-SCORE-TOO-RECENT)
+    
+    ;; Verify cryptographic proof
+    (asserts! (verify-score-proof tournament-id player score game-session-hash signature) ERR-INVALID-SCORE-PROOF)
+    
     (let ((new-games-played (+ (get games-played participant) u1)))
-      ;; Record the score
+      ;; Record the score with proof
       (map-set tournament-scores
         { tournament-id: tournament-id, player: player, game-number: new-games-played }
         {
           score: score,
-          submitted-at: stacks-block-height
+          submitted-at: stacks-block-height,
+          score-hash: game-session-hash,
+          signature: signature
         }
       )
       
@@ -400,6 +414,45 @@
 )
 
 ;; private functions
+
+;; Verify cryptographic proof of score
+(define-private (verify-score-proof (tournament-id uint) (player principal) (score uint) (game-session-hash (buff 32)) (signature (buff 65)))
+  (let (
+    ;; Create message to verify by concatenating all components as buffers
+    (tournament-id-buff (unwrap-panic (to-consensus-buff? tournament-id)))
+    (player-buff (unwrap-panic (to-consensus-buff? player)))
+    (score-buff (unwrap-panic (to-consensus-buff? score)))
+    (message-to-verify (concat 
+      (concat tournament-id-buff player-buff)
+      (concat score-buff game-session-hash)
+    ))
+    (message-hash (sha256 message-to-verify))
+  )
+    ;; Verify signature against game server public key
+    (secp256k1-verify message-hash signature GAME-SERVER-PUBKEY)
+  )
+)
+
+;; Get last submission block for rate limiting
+(define-private (get-last-submission-block (tournament-id uint) (player principal))
+  (let (
+    (participant (unwrap-panic (map-get? tournament-participants { tournament-id: tournament-id, player: player })))
+    (games-played (get games-played participant))
+  )
+    (if (is-eq games-played u0)
+      u0 ;; No previous submissions
+      (let (
+        (last-score-entry (map-get? tournament-scores { tournament-id: tournament-id, player: player, game-number: games-played }))
+      )
+        (match last-score-entry
+          entry (get submitted-at entry)
+          u0
+        )
+      )
+    )
+  )
+)
+
 
 ;; Update player tournament statistics
 (define-private (update-player-tournament-stats (player principal) (entry-fee uint))

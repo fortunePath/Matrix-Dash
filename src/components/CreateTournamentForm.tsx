@@ -13,10 +13,10 @@ export const CreateTournamentForm = () => {
   const { isConnected, walletAddress, stxBalance } = useWallet();
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
-    minEntryPrice: 1,
-    poolContribution: 5,
-    targetPool: 10,
-    duration: 1008,
+    minEntryPrice: '1',
+    poolContribution: '5',
+    targetPool: '10',
+    duration: '1008',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,20 +27,25 @@ export const CreateTournamentForm = () => {
       return;
     }
     
-    if (formData.poolContribution < 5) {
+    const minEntryPrice = parseFloat(formData.minEntryPrice) || 0;
+    const poolContribution = parseFloat(formData.poolContribution) || 0;
+    const targetPool = parseFloat(formData.targetPool) || 0;
+    const duration = parseInt(formData.duration) || 0;
+
+    if (poolContribution < 5) {
       toast.error('Pool contribution must be ≥ 5 STX');
       return;
     }
     
-    if (formData.targetPool < 10) {
+    if (targetPool < 10) {
       toast.error('Target pool must be ≥ 10 STX');
       return;
     }
 
     // Check if wallet has sufficient balance (pool contribution + estimated fees)
-    const requiredBalance = formData.poolContribution + 0.1; // Add 0.1 STX for transaction fees
+    const requiredBalance = poolContribution + 0.1; // Add 0.1 STX for transaction fees
     if (stxBalance < requiredBalance) {
-      toast.error(`Insufficient balance. You need at least ${requiredBalance} STX (${formData.poolContribution} STX contribution + ~0.1 STX fees)`, {
+      toast.error(`Insufficient balance. You need at least ${requiredBalance} STX (${poolContribution} STX contribution + ~0.1 STX fees)`, {
         description: `Current balance: ${stxBalance} STX`,
       });
       return;
@@ -49,7 +54,12 @@ export const CreateTournamentForm = () => {
     setIsCreating(true);
     
     try {
-      const result = await createTournament(formData);
+      const result = await createTournament({
+        minEntryPrice,
+        poolContribution,
+        targetPool,
+        duration,
+      });
       
       if (result.success) {
         toast.success(`Tournament created successfully! 🎮`, {
@@ -57,10 +67,10 @@ export const CreateTournamentForm = () => {
         });
         // Reset form
         setFormData({
-          minEntryPrice: 1,
-          poolContribution: 5,
-          targetPool: 10,
-          duration: 1008,
+          minEntryPrice: '1',
+          poolContribution: '5',
+          targetPool: '10',
+          duration: '1008',
         });
       } else {
         toast.error('Failed to create tournament', {
@@ -77,8 +87,12 @@ export const CreateTournamentForm = () => {
     }
   };
 
-  const estimatedTime = Math.floor(formData.duration / 144);
-  const remainingNeeded = formData.targetPool - formData.poolContribution;
+  const duration = parseInt(formData.duration) || 0;
+  const poolContribution = parseFloat(formData.poolContribution) || 0;
+  const targetPool = parseFloat(formData.targetPool) || 0;
+  
+  const estimatedTime = Math.floor(duration / 144);
+  const remainingNeeded = targetPool - poolContribution;
 
   return (
     <HolographicCard glowColor="secondary" className="mb-8">
@@ -98,7 +112,7 @@ export const CreateTournamentForm = () => {
               step="0.1"
               min="1"
               value={formData.minEntryPrice}
-              onChange={(e) => setFormData({ ...formData, minEntryPrice: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, minEntryPrice: e.target.value })}
               className="terminal-input"
             />
             <p className="text-xs text-muted-foreground mt-1">≥ 1 STX</p>
@@ -114,7 +128,7 @@ export const CreateTournamentForm = () => {
               step="1"
               min="5"
               value={formData.poolContribution}
-              onChange={(e) => setFormData({ ...formData, poolContribution: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, poolContribution: e.target.value })}
               className="terminal-input"
             />
             <p className="text-xs text-muted-foreground mt-1">≥ 5 STX</p>
@@ -130,7 +144,7 @@ export const CreateTournamentForm = () => {
               step="1"
               min="10"
               value={formData.targetPool}
-              onChange={(e) => setFormData({ ...formData, targetPool: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, targetPool: e.target.value })}
               className="terminal-input"
             />
             <p className="text-xs text-muted-foreground mt-1">≥ 10 STX</p>
@@ -146,7 +160,7 @@ export const CreateTournamentForm = () => {
               step="144"
               min="144"
               value={formData.duration}
-              onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
               className="terminal-input"
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -163,11 +177,11 @@ export const CreateTournamentForm = () => {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Your contribution:</span>
-            <span className="font-bold text-primary">{formData.poolContribution} STX</span>
+            <span className="font-bold text-primary">{poolContribution} STX</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Minimum to start:</span>
-            <span className="font-bold text-secondary">{formData.targetPool} STX</span>
+            <span className="font-bold text-secondary">{targetPool} STX</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Remaining needed:</span>
@@ -178,7 +192,7 @@ export const CreateTournamentForm = () => {
           <div className="w-full bg-muted rounded-full h-2 mt-3">
             <div
               className="bg-secondary h-2 rounded-full transition-all duration-300 matrix-glow-green"
-              style={{ width: `${(formData.poolContribution / formData.targetPool) * 100}%` }}
+              style={{ width: `${targetPool > 0 ? (poolContribution / targetPool) * 100 : 0}%` }}
             />
           </div>
         </div>

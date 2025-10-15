@@ -64,8 +64,8 @@ plan:
     - id: 0
       transactions:
         - emulated-contract-publish:
-            contract-name: main
+            contract-name: main2
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/main.clar
+            path: contracts/main2.clar
             clarity-version: 3
       epoch: "3.2"

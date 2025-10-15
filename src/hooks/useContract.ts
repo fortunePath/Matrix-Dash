@@ -35,14 +35,18 @@ export const useContract = () => {
     );
   };
 
-  const submitScore = async (tournamentId: number, score: number) => {
+  const submitScore = async (tournamentId: number, score: number, gameSessionHash: string, signature: string) => {
     if (!isConnected) throw new Error('Wallet not connected');
 
-    console.log('Submitting score:', { tournamentId, score });
+    console.log('Submitting score with proof:', { tournamentId, score, gameSessionHash, signature });
+
+    // Convert hex strings to buffers for Clarity contract
+    const gameSessionHashBuffer = `0x${gameSessionHash}`;
+    const signatureBuffer = `0x${signature}`;
 
     return callContract(
       'submit-score',
-      [tournamentId, score],
+      [tournamentId, score, gameSessionHashBuffer, signatureBuffer],
       contract.principal,
       contract.name
     );
