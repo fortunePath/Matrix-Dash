@@ -10,10 +10,10 @@ import { useWallet } from '@/contexts/WalletContext';
 import { Tournament } from '@/hooks/useTournaments';
 import { Link } from 'react-router-dom';
 import { NeonButton } from '@/components/ui/neon-button';
-import { Filter, Trophy, Gamepad2 } from 'lucide-react';
+import { Filter, Trophy, Gamepad2, Play, RefreshCw } from 'lucide-react';
 
 const Tournaments = () => {
-  const { tournaments, loading, enterTournament } = useTournaments();
+  const { tournaments, loading, enterTournament, refreshTournaments } = useTournaments();
   const { stxBalance } = useWallet();
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | Tournament['status']>('all');
@@ -65,23 +65,48 @@ const Tournaments = () => {
         {/* Create Tournament Section */}
         <CreateTournamentForm />
 
-        {/* Filters */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex items-center gap-2 text-primary">
-            <Filter className="w-5 h-5" />
-            <span className="font-bold">FILTER:</span>
+        {/* Filters and Demo Toggle */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-primary">
+              <Filter className="w-5 h-5" />
+              <span className="font-bold">FILTER:</span>
+            </div>
+            
+            {['all', 'pending', 'active', 'ended'].map((status) => (
+              <NeonButton
+                key={status}
+                variant={statusFilter === status ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setStatusFilter(status as any)}
+              >
+                {status.toUpperCase()}
+              </NeonButton>
+            ))}
           </div>
           
-          {['all', 'pending', 'active', 'ended'].map((status) => (
+          <div className="flex gap-2">
             <NeonButton
-              key={status}
-              variant={statusFilter === status ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              onClick={() => setStatusFilter(status as any)}
+              onClick={refreshTournaments}
+              className="gap-2"
+              disabled={loading}
             >
-              {status.toUpperCase()}
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              REFRESH
             </NeonButton>
-          ))}
+            
+            <NeonButton
+              variant="ghost"
+              size="sm"
+              onClick={() => {}}
+              className="gap-2"
+            >
+              <Play className="w-4 h-4" />
+              DEMO MODE
+            </NeonButton>
+          </div>
         </div>
 
         {/* Active Tournaments */}

@@ -29,12 +29,17 @@ export const useTournaments = () => {
         setLoading(true);
         setError(null);
         
+        console.log('🎮 Fetching tournaments...');
+        
         // Get contract stats to determine how many tournaments exist
         const stats = await contractAPI.getContractStats();
+        console.log('📊 Contract stats:', stats);
         
-        if (stats && stats.next_tournament_id) {
+        if (stats && stats.value && stats.value['next-tournament-id']) {
           const tournamentPromises = [];
-          const nextId = Number(stats.next_tournament_id);
+          const nextId = Number(stats.value['next-tournament-id'].value);
+          
+          console.log(`🔢 Found ${nextId - 1} tournaments to fetch`);
           
           // Fetch all tournaments from 1 to nextId-1
           for (let i = 1; i < nextId; i++) {
@@ -42,27 +47,33 @@ export const useTournaments = () => {
           }
           
           const tournamentResults = await Promise.all(tournamentPromises);
+          console.log('📋 Tournament results:', tournamentResults);
           
           const validTournaments: Tournament[] = tournamentResults
-            .filter(result => result !== null)
-            .map((result, index) => ({
-              id: (index + 1).toString(),
-              creator: result.creator || 'Unknown',
-              status: result.status || 'pending',
-              minEntryPrice: Number(result.min_entry_price || 0) / 1000000, // Convert from microSTX
-              poolContribution: Number(result.pool_contribution || 0) / 1000000,
-              targetPool: Number(result.target_pool || 0) / 1000000,
-              currentPool: Number(result.current_pool || 0) / 1000000,
-              participantCount: Number(result.participant_count || 0),
-              duration: Number(result.duration || 0),
-              startBlock: result.start_block ? Number(result.start_block) : undefined,
-              endBlock: result.end_block ? Number(result.end_block) : undefined,
-              createdAt: result.created_at ? Number(result.created_at) : Date.now(),
-            }));
+            .filter(result => result !== null && result.value)
+            .map((result, index) => {
+              const tournament = result.value; // Access the value property from cvToJSON
+              return {
+                id: (index + 1).toString(),
+                creator: tournament.creator?.value || 'Unknown',
+                status: tournament.status?.value || 'pending',
+                minEntryPrice: Number(tournament['min-entry-price']?.value || 0) / 1000000, // Convert from microSTX
+                poolContribution: Number(tournament['pool-contribution']?.value || 0) / 1000000,
+                targetPool: Number(tournament['target-pool']?.value || 0) / 1000000,
+                currentPool: Number(tournament['current-pool']?.value || 0) / 1000000,
+                participantCount: Number(tournament['participant-count']?.value || 0),
+                duration: Number(tournament.duration?.value || 0),
+                startBlock: tournament['start-block']?.value ? Number(tournament['start-block'].value) : undefined,
+                endBlock: tournament['end-block']?.value ? Number(tournament['end-block'].value) : undefined,
+                createdAt: tournament['created-at']?.value ? Number(tournament['created-at'].value) : Date.now(),
+              };
+            });
           
+          console.log('✅ Processed tournaments:', validTournaments);
           setTournaments(validTournaments);
         } else {
           // No tournaments exist yet
+          console.log('📭 No tournaments found');
           setTournaments([]);
         }
       } catch (err) {
@@ -76,6 +87,73 @@ export const useTournaments = () => {
 
     fetchTournaments();
   }, []);
+
+  // Manual refresh function
+  const refreshTournaments = async () => {
+    console.log('🔄 Manually refreshing tournaments...');
+    setLoading(true);
+    const fetchTournaments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('🎮 Fetching tournaments...');
+        
+        // Get contract stats to determine how many tournaments exist
+        const stats = await contractAPI.getContractStats();
+        console.log('📊 Contract stats:', stats);
+        
+        if (stats && stats.value && stats.value['next-tournament-id']) {
+          const tournamentPromises = [];
+          const nextId = Number(stats.value['next-tournament-id'].value);
+          
+          console.log(`🔢 Found ${nextId - 1} tournaments to fetch`);
+          
+          // Fetch all tournaments from 1 to nextId-1
+          for (let i = 1; i < nextId; i++) {
+            tournamentPromises.push(contractAPI.getTournament(i));
+          }
+          
+          const tournamentResults = await Promise.all(tournamentPromises);
+          console.log('📋 Tournament results:', tournamentResults);
+          
+          const validTournaments: Tournament[] = tournamentResults
+            .filter(result => result !== null && result.value)
+            .map((result, index) => {
+              const tournament = result.value; // Access the value property from cvToJSON
+              return {
+                id: (index + 1).toString(),
+                creator: tournament.creator?.value || 'Unknown',
+                status: tournament.status?.value || 'pending',
+                minEntryPrice: Number(tournament['min-entry-price']?.value || 0) / 1000000, // Convert from microSTX
+                poolContribution: Number(tournament['pool-contribution']?.value || 0) / 1000000,
+                targetPool: Number(tournament['target-pool']?.value || 0) / 1000000,
+                currentPool: Number(tournament['current-pool']?.value || 0) / 1000000,
+                participantCount: Number(tournament['participant-count']?.value || 0),
+                duration: Number(tournament.duration?.value || 0),
+                startBlock: tournament['start-block']?.value ? Number(tournament['start-block'].value) : undefined,
+                endBlock: tournament['end-block']?.value ? Number(tournament['end-block'].value) : undefined,
+                createdAt: tournament['created-at']?.value ? Number(tournament['created-at'].value) : Date.now(),
+              };
+            });
+          
+          console.log('✅ Processed tournaments:', validTournaments);
+          setTournaments(validTournaments);
+        } else {
+          // No tournaments exist yet
+          console.log('📭 No tournaments found');
+          setTournaments([]);
+        }
+      } catch (err) {
+        console.error('Error fetching tournaments:', err);
+        setError('Failed to fetch tournaments from blockchain');
+        setTournaments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    await fetchTournaments();
+  };
 
   const createTournament = async (params: {
     minEntryPrice: number;
@@ -92,10 +170,11 @@ export const useTournaments = () => {
       );
 
       if (result.success) {
-        // Refresh tournaments list
-        setTimeout(() => {
-          window.location.reload(); // Simple refresh for now
-        }, 2000);
+        // Wait a bit for the transaction to be mined, then refresh
+        console.log('🎉 Tournament created successfully! Refreshing in 3 seconds...');
+        setTimeout(async () => {
+          await refreshTournaments();
+        }, 3000);
         
         return { success: true, tournamentId: result.txId };
       } else {
@@ -161,5 +240,6 @@ export const useTournaments = () => {
     getTournamentById,
     getTournamentParticipants,
     calculateWinners,
+    refreshTournaments,
   };
 };

@@ -1,3 +1,5 @@
+import { cvToJSON, uintCV, principalCV, deserializeCV, serializeCV } from '@stacks/transactions';
+
 const CONTRACT_ADDRESS = "STNR55Y7QR9QHY5HW83D6JCEDWSX01P1R14ZQ27V.main2";
 const CONTRACT_PRINCIPAL = "STNR55Y7QR9QHY5HW83D6JCEDWSX01P1R14ZQ27V";
 const CONTRACT_NAME = "main2";
@@ -13,22 +15,51 @@ export const contractAPI = {
   // Read-only contract calls that don't require wallet connection
   getTournament: async (tournamentId: number) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-tournament`, {
+      console.log(`🎯 Fetching tournament ${tournamentId} using fetch...`);
+      
+      const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-tournament`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: [`0x${tournamentId.toString(16).padStart(16, '0')}`] // Convert to uint
+          arguments: [
+            '0x' + Array.from(serializeCV(uintCV(tournamentId))).map(b => b.toString(16).padStart(2, '0')).join('')
+          ]
         })
       });
       
       if (response.ok) {
         const data = await response.json();
-        return data.result;
+        console.log(`Raw tournament ${tournamentId} response:`, data);
+        
+        // Parse the hex result: first deserialize hex to CV, then convert to JSON
+        if (data.result) {
+          console.log(`Hex data to parse for tournament ${tournamentId}:`, data.result);
+          // Remove '0x' prefix and convert hex to Uint8Array (browser-compatible)
+          const hexData = data.result.startsWith('0x') ? data.result.slice(2) : data.result;
+          
+          // Convert hex string to Uint8Array
+          const hexBytes = new Uint8Array(hexData.length / 2);
+          for (let i = 0; i < hexData.length; i += 2) {
+            hexBytes[i / 2] = parseInt(hexData.substr(i, 2), 16);
+          }
+          
+          // Deserialize to Clarity Value
+          const clarityValue = deserializeCV(hexBytes);
+          console.log(`Deserialized CV for tournament ${tournamentId}:`, clarityValue);
+          
+          // Convert to JSON
+          const parsedResult = cvToJSON(clarityValue);
+          console.log(`Parsed tournament ${tournamentId}:`, parsedResult);
+          return parsedResult;
+        }
+        return null;
       } else {
         console.warn('Failed to fetch tournament data, status:', response.status);
+        const errorText = await response.text();
+        console.warn('Error response:', errorText);
         return null;
       }
     } catch (error) {
@@ -94,7 +125,9 @@ export const contractAPI = {
 
   getContractStats: async () => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-contract-stats`, {
+      console.log('📊 Fetching contract stats using fetch...');
+      
+      const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-contract-stats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,9 +140,34 @@ export const contractAPI = {
       
       if (response.ok) {
         const data = await response.json();
-        return data.result;
+        console.log('Raw contract stats response:', data);
+        
+        // Parse the hex result: first deserialize hex to CV, then convert to JSON
+        if (data.result) {
+          console.log('Hex data to parse:', data.result);
+          // Remove '0x' prefix and convert hex to Uint8Array (browser-compatible)
+          const hexData = data.result.startsWith('0x') ? data.result.slice(2) : data.result;
+          
+          // Convert hex string to Uint8Array
+          const hexBytes = new Uint8Array(hexData.length / 2);
+          for (let i = 0; i < hexData.length; i += 2) {
+            hexBytes[i / 2] = parseInt(hexData.substr(i, 2), 16);
+          }
+          
+          // Deserialize to Clarity Value
+          const clarityValue = deserializeCV(hexBytes);
+          console.log('Deserialized CV:', clarityValue);
+          
+          // Convert to JSON
+          const parsedResult = cvToJSON(clarityValue);
+          console.log('Parsed contract stats:', parsedResult);
+          return parsedResult;
+        }
+        return null;
       } else {
         console.warn('Failed to fetch contract stats, status:', response.status);
+        const errorText = await response.text();
+        console.warn('Error response:', errorText);
         return null;
       }
     } catch (error) {
