@@ -151,9 +151,7 @@ const Play = () => {
                     size="xl"
                     variant="secondary"
                     onClick={() => setGameStatus('playing')}
-                    className="gap-2"
                   >
-                    <Zap className="w-6 h-6" />
                     START TEST GAME
                   </NeonButton>
                   <p className="mt-4 text-sm text-muted-foreground">
@@ -339,9 +337,7 @@ const Play = () => {
                   size="xl"
                   variant="secondary"
                   onClick={() => setGameStatus('playing')}
-                  className="gap-2"
                 >
-                  <Zap className="w-6 h-6" />
                   START GAME
                 </NeonButton>
                 <p className="mt-4 text-sm text-muted-foreground">

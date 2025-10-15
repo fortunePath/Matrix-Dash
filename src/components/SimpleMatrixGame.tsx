@@ -49,7 +49,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     if (backgroundMusicRef.current) {
       backgroundMusicRef.current.play().catch(e => {
         console.log('Could not play background music:', e);
-        // Fallback: try again after user interaction (common in modern browsers)
+        // Fallback: try again after user interaction
       });
     }
   }, []);
@@ -90,7 +90,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     const py = y;
     
     if (character === 'neo') {
-      // Neo - pale skin, dark hair, black suit
+      // Neo 
       ctx.fillStyle = '#FFDBAC';
       ctx.fillRect(px - 6*scale, py - 18*scale, 12*scale, 10*scale);
       ctx.fillStyle = '#2F1B14';
@@ -101,7 +101,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       ctx.fillRect(px - 4*scale, py - 14*scale, 3*scale, 2*scale);
       ctx.fillRect(px + 1*scale, py - 14*scale, 3*scale, 2*scale);
     } else if (character === 'morpheus') {
-      // Morpheus - darker skin, bald, distinctive sunglasses
+      // Morpheus 
       ctx.fillStyle = '#8B4513';
       ctx.fillRect(px - 6*scale, py - 18*scale, 12*scale, 10*scale);
       ctx.fillStyle = '#000000';
@@ -110,7 +110,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       ctx.fillRect(px - 5*scale, py - 14*scale, 4*scale, 3*scale);
       ctx.fillRect(px + 1*scale, py - 14*scale, 4*scale, 3*scale);
     } else {
-      // Trinity - pale skin, black hair
+      // Trinity 
       ctx.fillStyle = '#FFDBAC';
       ctx.fillRect(px - 6*scale, py - 18*scale, 12*scale, 10*scale);
       ctx.fillStyle = '#000000';
@@ -122,7 +122,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       ctx.fillRect(px + 1*scale, py - 14*scale, 3*scale, 2*scale);
     }
     
-    // Body (black suit) - same for all
+    // Body 
     ctx.fillStyle = '#000000';
     ctx.fillRect(px - 8*scale, py - 8*scale, 16*scale, 12*scale);
     
@@ -192,7 +192,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       if (showCharacterSelect) {
         if (e.code === 'Space') {
           setShowCharacterSelect(false);
-          // Start background music when entering the actual game
+          // Start background music 
           if (isPlaying) {
             playBackgroundMusic();
           }
@@ -240,21 +240,21 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       if (x >= 150 && x <= 250 && y >= 180 && y <= 360) {
         setSelectedCharacter('neo');
         setShowCharacterSelect(false);
-        // Start background music when entering the actual game
+        // Start background music 
         if (isPlaying) {
           playBackgroundMusic();
         }
       } else if (x >= 350 && x <= 450 && y >= 180 && y <= 360) {
         setSelectedCharacter('morpheus');
         setShowCharacterSelect(false);
-        // Start background music when entering the actual game
+        // Start background music 
         if (isPlaying) {
           playBackgroundMusic();
         }
       } else if (x >= 550 && x <= 650 && y >= 180 && y <= 360) {
         setSelectedCharacter('trinity');
         setShowCharacterSelect(false);
-        // Start background music when entering the actual game
+        // Start background music 
         if (isPlaying) {
           playBackgroundMusic();
         }
@@ -287,13 +287,13 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     // Update player position
     const newPlayer = { ...player };
     if (keysPressed.current.has('ArrowLeft') && newPlayer.x > 20) {
-      newPlayer.x -= 5;
+      newPlayer.x -= 8;
     }
     if (keysPressed.current.has('ArrowRight') && newPlayer.x < 780) {
-      newPlayer.x += 5;
+      newPlayer.x += 8;
     }
     if (keysPressed.current.has('ArrowDown') && newPlayer.y < 580) {
-      newPlayer.y += 5;
+      newPlayer.y += 8;
     }
 
     // Shooting
@@ -446,7 +446,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     const py = newPlayer.y;
     
     if (selectedCharacter === 'neo') {
-      // Neo - pale skin, dark hair, black suit
+      // Neo 
       ctx.fillStyle = '#FFDBAC'; // Pale skin
       ctx.fillRect(px - 6, py - 18, 12, 10);
       // Dark hair
@@ -459,7 +459,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       ctx.fillRect(px - 4, py - 14, 3, 2);
       ctx.fillRect(px + 1, py - 14, 3, 2);
     } else if (selectedCharacter === 'morpheus') {
-      // Morpheus - darker skin, bald, distinctive sunglasses
+      // Morpheus 
       ctx.fillStyle = '#8B4513'; // Darker skin
       ctx.fillRect(px - 6, py - 18, 12, 10);
       // Sunglasses (distinctive shape)
@@ -469,7 +469,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       ctx.fillRect(px - 5, py - 14, 4, 3);
       ctx.fillRect(px + 1, py - 14, 4, 3);
     } else {
-      // Trinity - pale skin, black hair
+      // Trinity 
       ctx.fillStyle = '#FFDBAC'; // Pale skin
       ctx.fillRect(px - 6, py - 18, 12, 10);
       // Black hair (longer)
@@ -483,11 +483,11 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       ctx.fillRect(px + 1, py - 14, 3, 2);
     }
     
-    // Body (black suit) - same for all
+    // Body 
     ctx.fillStyle = '#000000';
     ctx.fillRect(px - 8, py - 8, 16, 12);
     
-    // Arms (black suit sleeves)
+    // Arms 
     ctx.fillStyle = '#000000';
     ctx.fillRect(px - 12, py - 6, 6, 10);
     ctx.fillRect(px + 6, py - 6, 6, 10);
@@ -498,7 +498,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     ctx.fillRect(px - 12, py + 4, 4, 4);
     ctx.fillRect(px + 8, py + 4, 4, 4);
     
-    // Legs (black pants)
+    // Legs 
     ctx.fillStyle = '#000000';
     ctx.fillRect(px - 6, py + 4, 5, 12);
     ctx.fillRect(px + 1, py + 4, 5, 12);
@@ -523,14 +523,14 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       ctx.fillRect(bullet.x - 2, bullet.y - 5, 4, 10);
     });
 
-    // Draw enemies (space invaders - larger)
+    // Draw enemies 
     enemies.forEach(enemy => {
       const ex = enemy.x;
       const ey = enemy.y;
       const type = enemy.type || 0;
       
       if (type === 0) {
-        // Classic red invader (larger)
+        // Classic red invader 
         ctx.fillStyle = '#FF0000';
         // Body
         ctx.fillRect(ex - 12, ey - 9, 24, 12);
@@ -542,7 +542,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
         ctx.fillRect(ex - 6, ey - 6, 3, 3);
         ctx.fillRect(ex + 3, ey - 6, 3, 3);
       } else if (type === 1) {
-        // Purple squid invader (larger)
+        // Purple squid invader 
         ctx.fillStyle = '#8A2BE2';
         // Head
         ctx.fillRect(ex - 9, ey - 12, 18, 9);
@@ -558,7 +558,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
         ctx.fillRect(ex - 4, ey - 9, 3, 3);
         ctx.fillRect(ex + 1, ey - 9, 3, 3);
       } else if (type === 2) {
-        // Green diamond invader (larger)
+        // Green diamond invader 
         ctx.fillStyle = '#00FF00';
         // Diamond shape
         ctx.fillRect(ex - 3, ey - 12, 6, 3);
@@ -574,7 +574,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
         ctx.fillRect(ex - 4, ey - 6, 2, 2);
         ctx.fillRect(ex + 2, ey - 6, 2, 2);
       } else {
-        // Orange crab invader (larger)
+        // Orange crab invader 
         ctx.fillStyle = '#FF8800';
         // Main body
         ctx.fillRect(ex - 9, ey - 6, 18, 9);
@@ -593,13 +593,13 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       }
     });
 
-    // Draw bonuses (same size as enemies)
+    // Draw bonuses 
     bonuses.forEach(bonus => {
       const bx = bonus.x;
       const by = bonus.y;
       
       if (bonus.type === 0) {
-        // Green pill (larger)
+        // Green pill 
         ctx.fillStyle = '#00FF00';
         ctx.fillRect(bx - 6, by - 12, 12, 24);
         ctx.fillStyle = '#00AA00';
@@ -608,7 +608,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
         ctx.fillStyle = '#88FF88';
         ctx.fillRect(bx - 1, by - 6, 2, 12);
       } else if (bonus.type === 1) {
-        // Red pill (larger)
+        // Red pill 
         ctx.fillStyle = '#FF0000';
         ctx.fillRect(bx - 6, by - 12, 12, 24);
         ctx.fillStyle = '#AA0000';
@@ -617,7 +617,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
         ctx.fillStyle = '#FF8888';
         ctx.fillRect(bx - 1, by - 6, 2, 12);
       } else {
-        // Matrix code symbol (larger)
+        // Matrix code symbol 
         ctx.fillStyle = '#00FF00';
         ctx.font = 'bold 24px monospace';
         ctx.textAlign = 'center';
@@ -695,7 +695,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       ctx.fillStyle = '#FFFFFF';
       ctx.fillText('Press R to Restart', 400, 400);
     } else if (showCharacterSelect) {
-      // Character selection screen within canvas
+      // Character selection screen 
       ctx.fillStyle = '#00FF00';
       ctx.font = 'bold 32px "Orbitron", "Courier New", monospace';
       ctx.textAlign = 'center';

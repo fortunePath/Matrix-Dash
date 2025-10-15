@@ -4,7 +4,6 @@ import { GlitchText } from './GlitchText';
 import { NeonButton } from './ui/neon-button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Rocket } from 'lucide-react';
 import { useTournaments } from '@/hooks/useTournaments';
 import { useWallet } from '@/contexts/WalletContext';
 import { toast } from 'sonner';
@@ -191,7 +190,6 @@ export const CreateTournamentForm = () => {
           className="w-full gap-2"
           disabled={isCreating || !isConnected}
         >
-          <Rocket className="w-5 h-5" />
           {!isConnected 
             ? 'CONNECT WALLET TO DEPLOY' 
             : isCreating 
