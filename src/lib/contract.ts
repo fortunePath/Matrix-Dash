@@ -1,4 +1,4 @@
-import { cvToJSON, uintCV, principalCV, deserializeCV, serializeCV } from '@stacks/transactions';
+import { cvToJSON, deserializeCV } from '@stacks/transactions';
 
 const CONTRACT_ADDRESS = "STNR55Y7QR9QHY5HW83D6JCEDWSX01P1R14ZQ27V.main2";
 const CONTRACT_PRINCIPAL = "STNR55Y7QR9QHY5HW83D6JCEDWSX01P1R14ZQ27V";
@@ -15,7 +15,7 @@ export const contractAPI = {
   // Read-only contract calls that don't require wallet connection
   getTournament: async (tournamentId: number) => {
     try {
-      console.log(`🎯 Fetching tournament ${tournamentId} using fetch...`);
+      console.log(`🔍 Fetching tournament ${tournamentId} using fetch...`);
       
       const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-tournament`, {
         method: 'POST',
@@ -24,9 +24,7 @@ export const contractAPI = {
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: [
-            '0x' + Array.from(serializeCV(uintCV(tournamentId))).map(b => b.toString(16).padStart(2, '0')).join('')
-          ]
+          arguments: [`0x0100000000000000000000000000${tournamentId.toString(16).padStart(6, '0')}`]
         })
       });
       
@@ -70,7 +68,7 @@ export const contractAPI = {
 
   getParticipant: async (tournamentId: number, playerAddress: string) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-participant`, {
+      const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-participant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,8 +76,8 @@ export const contractAPI = {
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
           arguments: [
-            `0x${tournamentId.toString(16).padStart(16, '0')}`, // Convert to uint
-            `'${playerAddress}` // Convert to principal
+            `0x0100000000000000000000000000${tournamentId.toString(16).padStart(6, '0')}`,
+            `0x051a${playerAddress.slice(2)}`
           ]
         })
       });
@@ -99,14 +97,14 @@ export const contractAPI = {
 
   getPlayerStats: async (playerAddress: string) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-player-stats`, {
+      const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-player-stats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: [`'${playerAddress}`] // Convert to principal
+          arguments: [`0x051a${playerAddress.slice(2)}`]
         })
       });
       
@@ -125,7 +123,7 @@ export const contractAPI = {
 
   getContractStats: async () => {
     try {
-      console.log('📊 Fetching contract stats using fetch...');
+      console.log(' Fetching contract stats using fetch...');
       
       const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-contract-stats`, {
         method: 'POST',
@@ -178,14 +176,14 @@ export const contractAPI = {
 
   isTournamentActive: async (tournamentId: number) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/is-tournament-active`, {
+      const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/is-tournament-active`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: [`0x${tournamentId.toString(16).padStart(16, '0')}`] // Convert to uint
+          arguments: [`0x0100000000000000000000000000${tournamentId.toString(16).padStart(6, '0')}`]
         })
       });
       
@@ -214,7 +212,7 @@ export const contractAPI = {
 
   getLeaderboardPosition: async (tournamentId: number, rank: number) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-leaderboard-position`, {
+      const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-leaderboard-position`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -222,8 +220,8 @@ export const contractAPI = {
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
           arguments: [
-            `0x${tournamentId.toString(16).padStart(16, '0')}`,
-            `0x${rank.toString(16).padStart(16, '0')}`
+            `0x0100000000000000000000000000${tournamentId.toString(16).padStart(6, '0')}`,
+            `0x0100000000000000000000000000${rank.toString(16).padStart(6, '0')}`
           ]
         })
       });
@@ -242,14 +240,14 @@ export const contractAPI = {
 
   getTournamentWinners: async (tournamentId: number) => {
     try {
-      const response = await fetch(`https://stacks-node-api.testnet.stacks.co/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-tournament-winners`, {
+      const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-tournament-winners`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: [`0x${tournamentId.toString(16).padStart(16, '0')}`]
+          arguments: [`0x0100000000000000000000000000${tournamentId.toString(16).padStart(6, '0')}`]
         })
       });
 
