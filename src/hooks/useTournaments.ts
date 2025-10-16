@@ -50,9 +50,9 @@ export const useTournaments = () => {
           console.log('📋 Tournament results:', tournamentResults);
           
           const validTournaments: Tournament[] = tournamentResults
-            .filter(result => result !== null && result.value)
+            .filter(result => result !== null && result.value && result.value.value)
             .map((result, index) => {
-              const tournament = result.value; // Access the value property from cvToJSON
+              const tournament = result.value.value; // Tournament is wrapped in optional, so we need .value.value
               return {
                 id: (index + 1).toString(),
                 creator: tournament.creator?.value || 'Unknown',
@@ -118,9 +118,9 @@ export const useTournaments = () => {
           console.log('📋 Tournament results:', tournamentResults);
           
           const validTournaments: Tournament[] = tournamentResults
-            .filter(result => result !== null && result.value)
+            .filter(result => result !== null && result.value && result.value.value)
             .map((result, index) => {
-              const tournament = result.value; // Access the value property from cvToJSON
+              const tournament = result.value.value; // Tournament is wrapped in optional, so we need .value.value
               return {
                 id: (index + 1).toString(),
                 creator: tournament.creator?.value || 'Unknown',
