@@ -13,8 +13,8 @@ import { NeonButton } from '@/components/ui/neon-button';
 import { Filter, Trophy, Gamepad2, Play, RefreshCw } from 'lucide-react';
 
 const Tournaments = () => {
-  const { tournaments, loading, enterTournament, refreshTournaments } = useTournaments();
-  const { stxBalance } = useWallet();
+  const { tournaments, loading, enterTournament, refreshTournaments, checkUserParticipation, markParticipation } = useTournaments();
+  const { stxBalance, walletAddress } = useWallet();
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | Tournament['status']>('all');
 
@@ -27,6 +27,11 @@ const Tournaments = () => {
     if (tournament) {
       setSelectedTournament(tournament);
     }
+  };
+
+  const handlePlayClick = (tournamentId: string) => {
+    // Navigate to play page with tournament ID
+    window.location.href = `/play?tournament=${tournamentId}`;
   };
 
   return (
@@ -100,11 +105,16 @@ const Tournaments = () => {
             <NeonButton
               variant="ghost"
               size="sm"
-              onClick={() => {}}
+              onClick={() => {
+                if (walletAddress) {
+                  markParticipation('1', walletAddress);
+                  window.location.reload();
+                }
+              }}
               className="gap-2"
             >
               <Play className="w-4 h-4" />
-              DEMO MODE
+              MARK T1 PARTICIPATION
             </NeonButton>
           </div>
         </div>
@@ -136,6 +146,8 @@ const Tournaments = () => {
                   <TournamentCard
                     tournament={tournament}
                     onEnter={handleEnterClick}
+                    onPlay={handlePlayClick}
+                    checkUserParticipation={checkUserParticipation}
                   />
                 </div>
               ))}

@@ -1,4 +1,4 @@
-import { cvToJSON, deserializeCV } from '@stacks/transactions';
+import { cvToJSON, deserializeCV, principalCV, serializeCV } from '@stacks/transactions';
 
 const CONTRACT_ADDRESS = "STNR55Y7QR9QHY5HW83D6JCEDWSX01P1R14ZQ27V.main2";
 const CONTRACT_PRINCIPAL = "STNR55Y7QR9QHY5HW83D6JCEDWSX01P1R14ZQ27V";
@@ -77,14 +77,28 @@ export const contractAPI = {
           sender: CONTRACT_PRINCIPAL,
           arguments: [
             `0x0100000000000000000000000000${tournamentId.toString(16).padStart(6, '0')}`,
-            `0x051a${playerAddress.slice(2)}`
+            '0x' + Array.from(serializeCV(principalCV(playerAddress))).map(b => b.toString(16).padStart(2, '0')).join('')
           ]
         })
       });
       
       if (response.ok) {
         const data = await response.json();
-        return data.result;
+        console.log(`📊 Participant data for ${playerAddress} in tournament ${tournamentId}:`, data);
+        
+        if (data.result) {
+          const hexData = data.result.startsWith('0x') ? data.result.slice(2) : data.result;
+          const hexBytes = new Uint8Array(hexData.length / 2);
+          for (let i = 0; i < hexData.length; i += 2) {
+            hexBytes[i / 2] = parseInt(hexData.substr(i, 2), 16);
+          }
+          
+          const clarityValue = deserializeCV(hexBytes);
+          const parsedResult = cvToJSON(clarityValue);
+          console.log(`✅ Parsed participant data:`, parsedResult);
+          return parsedResult;
+        }
+        return null;
       } else {
         console.warn('Failed to fetch participant data, status:', response.status);
         return null;
@@ -92,6 +106,17 @@ export const contractAPI = {
     } catch (error) {
       console.error('Error fetching participant:', error);
       return null;
+    }
+  },
+
+  hasUserParticipated: async (tournamentId: number, playerAddress: string) => {
+    try {
+      const participantData = await contractAPI.getParticipant(tournamentId, playerAddress);
+      // Check if participant data exists and has a value (participant data is wrapped in optional)
+      return participantData && participantData.value && participantData.value.value;
+    } catch (error) {
+      console.error('Error checking user participation:', error);
+      return false;
     }
   },
 
@@ -104,7 +129,7 @@ export const contractAPI = {
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: [`0x051a${playerAddress.slice(2)}`]
+          arguments: ['0x' + Array.from(serializeCV(principalCV(playerAddress))).map(b => b.toString(16).padStart(2, '0')).join('')]
         })
       });
       

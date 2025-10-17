@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { contractAPI } from '@/lib/contract';
 import { useContract } from './useContract';
+import { useWallet } from '@/contexts/WalletContext';
 
 export interface Tournament {
   id: string;
@@ -22,6 +23,7 @@ export const useTournaments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { createTournament: createTournamentContract, enterTournament: enterTournamentContract } = useContract();
+  const { walletAddress } = useWallet();
 
   useEffect(() => {
     const fetchTournaments = async () => {
@@ -193,6 +195,13 @@ export const useTournaments = () => {
       );
 
       if (result.success) {
+        // Mark participation in localStorage for the current user
+        if (walletAddress) {
+          const participationKey = `tournament_${tournamentId}_${walletAddress}`;
+          localStorage.setItem(participationKey, 'true');
+          console.log(`✅ Marked participation for tournament ${tournamentId}, user ${walletAddress}`);
+        }
+        
         // Refresh tournaments list
         setTimeout(() => {
           window.location.reload(); // Simple refresh for now
@@ -231,6 +240,26 @@ export const useTournaments = () => {
     return sorted.slice(0, winnerCount).map(p => p.address);
   };
 
+  const checkUserParticipation = async (tournamentId: string, userAddress: string) => {
+    // Simple check: if user has participated, we'll track it in localStorage
+    // This is a workaround for CORS issues with the API
+    try {
+      const participationKey = `tournament_${tournamentId}_${userAddress}`;
+      const hasParticipated = localStorage.getItem(participationKey) === 'true';
+      console.log(`🔍 Checking participation for tournament ${tournamentId}, user ${userAddress}: ${hasParticipated}`);
+      return hasParticipated;
+    } catch (error) {
+      console.error('Error checking user participation:', error);
+      return false;
+    }
+  };
+
+  const markParticipation = (tournamentId: string, userAddress: string) => {
+    const participationKey = `tournament_${tournamentId}_${userAddress}`;
+    localStorage.setItem(participationKey, 'true');
+    console.log(`✅ Manually marked participation for tournament ${tournamentId}, user ${userAddress}`);
+  };
+
   return {
     tournaments,
     loading,
@@ -241,5 +270,7 @@ export const useTournaments = () => {
     getTournamentParticipants,
     calculateWinners,
     refreshTournaments,
+    checkUserParticipation,
+    markParticipation,
   };
 };

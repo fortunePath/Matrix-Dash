@@ -2,15 +2,40 @@ import { HolographicCard } from './HolographicCard';
 import { GlitchText } from './GlitchText';
 import { NeonButton } from './ui/neon-button';
 import { Tournament } from '@/hooks/useTournaments';
-import { Users, Clock, Target, Zap } from 'lucide-react';
+import { Users, Clock, Target, Zap, Play } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { useState, useEffect } from 'react';
+import { useWallet } from '@/contexts/WalletContext';
 
 interface TournamentCardProps {
   tournament: Tournament;
   onEnter: (tournamentId: string) => void;
+  onPlay?: (tournamentId: string) => void;
+  checkUserParticipation?: (tournamentId: string, userAddress: string) => Promise<boolean>;
 }
 
-export const TournamentCard = ({ tournament, onEnter }: TournamentCardProps) => {
+export const TournamentCard = ({ tournament, onEnter, onPlay, checkUserParticipation }: TournamentCardProps) => {
+  const { walletAddress } = useWallet();
+  const [hasParticipated, setHasParticipated] = useState(false);
+  const [checkingParticipation, setCheckingParticipation] = useState(false);
+
+  useEffect(() => {
+    const checkParticipation = async () => {
+      if (walletAddress && checkUserParticipation) {
+        setCheckingParticipation(true);
+        try {
+          const participated = await checkUserParticipation(tournament.id, walletAddress);
+          setHasParticipated(participated);
+        } catch (error) {
+          console.error('Error checking participation:', error);
+        } finally {
+          setCheckingParticipation(false);
+        }
+      }
+    };
+
+    checkParticipation();
+  }, [tournament.id, walletAddress, checkUserParticipation]);
   const getStatusColor = (status: Tournament['status']) => {
     switch (status) {
       case 'pending':
@@ -112,15 +137,37 @@ export const TournamentCard = ({ tournament, onEnter }: TournamentCardProps) => 
         Creator: <span className="text-primary font-mono">{tournament.creator}</span>
       </div>
 
-      {/* Action Button */}
+      {/* Action Buttons */}
       {tournament.status !== 'ended' && (
-        <NeonButton
-          variant="default"
-          className="w-full mt-auto"
-          onClick={() => onEnter(tournament.id)}
-        >
-          JACK IN
-        </NeonButton>
+        <div className="mt-auto space-y-2">
+          {hasParticipated && tournament.status === 'active' && onPlay ? (
+            <NeonButton
+              variant="secondary"
+              className="w-full gap-2"
+              onClick={() => onPlay(tournament.id)}
+            >
+              <Play className="w-4 h-4" />
+              PLAY NOW
+            </NeonButton>
+          ) : null}
+          
+          {!hasParticipated && (
+            <NeonButton
+              variant="default"
+              className="w-full"
+              onClick={() => onEnter(tournament.id)}
+              disabled={checkingParticipation}
+            >
+              {checkingParticipation ? 'CHECKING...' : 'JACK IN'}
+            </NeonButton>
+          )}
+          
+          {hasParticipated && tournament.status !== 'active' && (
+            <div className="text-center text-sm text-primary">
+              ✓ You're in this tournament
+            </div>
+          )}
+        </div>
       )}
     </HolographicCard>
   );
