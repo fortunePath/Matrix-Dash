@@ -13,8 +13,11 @@ interface TournamentEndManagerProps {
 export const TournamentEndManager = ({ tournamentId }: TournamentEndManagerProps) => {
   const { endTournament, distributePrizes } = useContract();
   const { getTournamentById, getTournamentParticipants, calculateWinners } = useTournaments();
-  const { isConnected } = useWallet();
+  const { isConnected, walletAddress } = useWallet();
   const tournament = getTournamentById(tournamentId);
+  
+  // Only show to tournament creator
+  const isCreator = tournament && walletAddress && tournament.creator === walletAddress;
 
   const [isEnding, setIsEnding] = useState(false);
   const [isDistributing, setIsDistributing] = useState(false);
@@ -98,7 +101,7 @@ export const TournamentEndManager = ({ tournamentId }: TournamentEndManagerProps
     }
   };
 
-  if (!tournament) return null;
+  if (!tournament || !isCreator) return null;
 
   return (
     <div className="bg-card/30 rounded-lg border neon-border p-6 space-y-4">

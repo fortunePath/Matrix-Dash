@@ -15,7 +15,7 @@ export const contractAPI = {
   // Read-only contract calls that don't require wallet connection
   getTournament: async (tournamentId: number) => {
     try {
-      console.log(`🔍 Fetching tournament ${tournamentId} using fetch...`);
+      console.log(` Fetching tournament ${tournamentId} using fetch`);
       
       const response = await fetch(`https://api.testnet.hiro.so/v2/contracts/call-read/${CONTRACT_PRINCIPAL}/${CONTRACT_NAME}/get-tournament`, {
         method: 'POST',
@@ -77,14 +77,14 @@ export const contractAPI = {
           sender: CONTRACT_PRINCIPAL,
           arguments: [
             `0x0100000000000000000000000000${tournamentId.toString(16).padStart(6, '0')}`,
-            '0x' + Array.from(serializeCV(principalCV(playerAddress))).map(b => b.toString(16).padStart(2, '0')).join('')
+            Array.from(serializeCV(principalCV(playerAddress))).map(b => '0x' + b.toString(16).padStart(2, '0')).join('')
           ]
         })
       });
       
       if (response.ok) {
         const data = await response.json();
-        console.log(`📊 Participant data for ${playerAddress} in tournament ${tournamentId}:`, data);
+        console.log(`Participant data for ${playerAddress} in tournament ${tournamentId}:`, data);
         
         if (data.result) {
           const hexData = data.result.startsWith('0x') ? data.result.slice(2) : data.result;
@@ -95,7 +95,7 @@ export const contractAPI = {
           
           const clarityValue = deserializeCV(hexBytes);
           const parsedResult = cvToJSON(clarityValue);
-          console.log(`✅ Parsed participant data:`, parsedResult);
+          console.log(` Parsed participant data:`, parsedResult);
           return parsedResult;
         }
         return null;
@@ -129,7 +129,7 @@ export const contractAPI = {
         },
         body: JSON.stringify({
           sender: CONTRACT_PRINCIPAL,
-          arguments: ['0x' + Array.from(serializeCV(principalCV(playerAddress))).map(b => b.toString(16).padStart(2, '0')).join('')]
+          arguments: [Array.from(serializeCV(principalCV(playerAddress))).map(b => '0x' + b.toString(16).padStart(2, '0')).join('')]
         })
       });
       
@@ -285,6 +285,81 @@ export const contractAPI = {
     } catch (error) {
       console.error('Error fetching tournament winners:', error);
       return null;
+    }
+  },
+
+  getTournamentLeaderboard: async (tournamentId: number) => {
+    try {
+      console.log(` Building leaderboard for tournament ${tournamentId} from participant data...`);
+      
+      // Since get-tournament-leaderboard doesn't exist, we'll build it from tournament data
+      const tournament = await contractAPI.getTournament(tournamentId);
+      
+      if (!tournament || !tournament.value || !tournament.value.value) {
+        console.log(' Tournament not found');
+        return null;
+      }
+      
+      const tournamentData = tournament.value.value;
+      const participantCount = Number(tournamentData['participant-count']?.value || 0);
+      
+      console.log(` Tournament has ${participantCount} participants`);
+      
+      if (participantCount === 0) {
+        return { value: [] };
+      }
+      
+      // For now, return empty array since we can't enumerate all participants
+      // In a real implementation, you'd need a way to get all participant addresses
+      console.log(' Note: Cannot build full leaderboard without participant enumeration function');
+      return { value: [] };
+      
+    } catch (error) {
+      console.error('Error building tournament leaderboard:', error);
+      return null;
+    }
+  },
+
+  checkScoreSubmission: async (tournamentId: number, playerAddress: string) => {
+    try {
+      console.log(` Checking score submission for player ${playerAddress} in tournament ${tournamentId}`);
+      
+      const participantData = await contractAPI.getParticipant(tournamentId, playerAddress);
+      
+      if (participantData && participantData.value && participantData.value.value) {
+        const participant = participantData.value.value;
+        const score = participant.score ? Number(participant.score.value) : 0;
+        const hasScore = score > 0;
+        
+        console.log(` Score check result:`, { 
+          hasParticipated: true, 
+          hasScore, 
+          score,
+          participant 
+        });
+        
+        return {
+          hasParticipated: true,
+          hasScore,
+          score,
+          participant
+        };
+      }
+      
+      return {
+        hasParticipated: false,
+        hasScore: false,
+        score: 0,
+        participant: null
+      };
+    } catch (error) {
+      console.error('Error checking score submission:', error);
+      return {
+        hasParticipated: false,
+        hasScore: false,
+        score: 0,
+        participant: null
+      };
     }
   },
 };

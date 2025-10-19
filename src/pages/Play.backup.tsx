@@ -9,6 +9,7 @@ import { useWallet } from '@/contexts/WalletContext';
 import { ArrowLeft, Trophy, Target, Clock } from 'lucide-react';
 import { HolographicCard } from '@/components/HolographicCard';
 import { SimpleMatrixGame } from '@/components/SimpleMatrixGame';
+import { TournamentEndManager } from '@/components/TournamentEndManager';
 import { toast } from 'sonner';
 
 // Simple game session proof functions
@@ -57,93 +58,6 @@ const Play = () => {
     setScore(newScore);
   };
 
-  // Function to add score to leaderboard (localStorage-based)
-  const addScoreToLeaderboard = (playerAddress: string, score: number) => {
-    if (!tournamentIdFromURL) return;
-
-    const leaderboardKey = `tournament_${tournamentIdFromURL}_leaderboard`;
-    const storedLeaderboard = localStorage.getItem(leaderboardKey);
-    
-    let leaderboardEntries: Array<{ address: string; score: number; timestamp: number }> = [];
-    
-    if (storedLeaderboard) {
-      leaderboardEntries = JSON.parse(storedLeaderboard);
-    }
-    
-    // Update or add user's score
-    const existingEntryIndex = leaderboardEntries.findIndex(entry => entry.address === playerAddress);
-    
-    if (existingEntryIndex >= 0) {
-      // Update existing score if new score is higher
-      if (score > leaderboardEntries[existingEntryIndex].score) {
-        leaderboardEntries[existingEntryIndex].score = score;
-        leaderboardEntries[existingEntryIndex].timestamp = Date.now();
-      }
-    } else {
-      // Add new entry
-      leaderboardEntries.push({
-        address: playerAddress,
-        score: score,
-        timestamp: Date.now()
-      });
-    }
-    
-    // Save updated leaderboard
-    localStorage.setItem(leaderboardKey, JSON.stringify(leaderboardEntries));
-    console.log(`🏆 Added score ${score} for ${playerAddress.slice(0, 8)}... to tournament ${tournamentIdFromURL}`);
-    
-    // Refresh leaderboard display
-    fetchLeaderboard();
-  };
-
-  // Function to fetch leaderboard data (localStorage-only)
-  const fetchLeaderboard = () => {
-    if (!tournament || !tournamentIdFromURL) return;
-
-    try {
-      console.log('🔄 Fetching leaderboard from localStorage...');
-      
-      const leaderboardKey = `tournament_${tournamentIdFromURL}_leaderboard`;
-      const storedLeaderboard = localStorage.getItem(leaderboardKey);
-      
-      let leaderboardEntries: Array<{ address: string; score: number; timestamp: number }> = [];
-      
-      if (storedLeaderboard) {
-        leaderboardEntries = JSON.parse(storedLeaderboard);
-      }
-      
-      // Sort and rank
-      const sortedParticipants = leaderboardEntries
-        .filter(entry => entry.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .map((entry, index) => ({
-          rank: index + 1,
-          address: entry.address,
-          score: entry.score
-        }));
-      
-      setLeaderboard(sortedParticipants);
-      console.log('✅ Leaderboard updated:', sortedParticipants);
-      
-      // Update user score and rank
-      if (walletAddress) {
-        const userEntry = leaderboardEntries.find(entry => entry.address === walletAddress);
-        if (userEntry) {
-          setUserScore(userEntry.score);
-          const userRank = sortedParticipants.findIndex(entry => entry.address === walletAddress) + 1;
-          setCurrentUserRank(userRank > 0 ? userRank : null);
-        } else {
-          setUserScore(0);
-          setCurrentUserRank(null);
-        }
-      }
-      
-    } catch (error) {
-      console.error('Error fetching leaderboard:', error);
-      setLeaderboard([]);
-    }
-  };
-
   const handleSubmitScore = async (finalScore: number) => {
     if (!tournament || !tournamentIdFromURL || !isConnected) {
       return;
@@ -167,11 +81,11 @@ const Play = () => {
         toast.success('Score submitted successfully!', {
           description: `Your score of ${finalScore.toLocaleString()} has been recorded`,
         });
-        
-        // Add score to localStorage leaderboard
-        if (walletAddress) {
-          addScoreToLeaderboard(walletAddress, finalScore);
-        }
+        // Refresh leaderboard after successful submission
+        setTimeout(() => {
+          fetchLeaderboard();
+          checkUserScore();
+        }, 2000);
       } else {
         toast.error('Failed to submit score', {
           description: result.error || 'Unknown error occurred',
@@ -193,6 +107,94 @@ const Play = () => {
 
     if (tournament && tournamentIdFromURL && isConnected) {
       handleSubmitScore(finalScore);
+    }
+  };
+
+  // Function to fetch leaderboard data
+  const fetchLeaderboard = async () => {
+    if (!tournament || !tournamentIdFromURL) return;
+
+    try {
+      console.log(' Fetching leaderboard...');
+      
+      // Use localStorage for demo leaderboard since contract doesn't have enumeration
+      const leaderboardKey = `tournament_${tournamentIdFromURL}_leaderboard`;
+      const storedLeaderboard = localStorage.getItem(leaderboardKey);
+      
+      let leaderboardEntries: Array<{ address: string; score: number }> = [];
+      
+      if (storedLeaderboard) {
+        leaderboardEntries = JSON.parse(storedLeaderboard);
+      }
+      
+      // Also check current user's score from contract
+      if (walletAddress) {
+        const userScoreData = await contractAPI.checkScoreSubmission(Number(tournamentIdFromURL), walletAddress);
+        
+        if (userScoreData.hasScore) {
+          // Update or add user's score to leaderboard
+          const existingEntryIndex = leaderboardEntries.findIndex(entry => entry.address === walletAddress);
+          
+          if (existingEntryIndex >= 0) {
+            // Update existing score if new score is higher
+            if (userScoreData.score > leaderboardEntries[existingEntryIndex].score) {
+              leaderboardEntries[existingEntryIndex].score = userScoreData.score;
+            }
+          } else {
+            // Add new entry
+            leaderboardEntries.push({
+              address: walletAddress,
+              score: userScoreData.score
+            });
+          }
+          
+          // Save updated leaderboard
+          localStorage.setItem(leaderboardKey, JSON.stringify(leaderboardEntries));
+        }
+      }
+      
+      // Sort and rank
+      const sortedParticipants = leaderboardEntries
+        .filter(entry => entry.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map((entry, index) => ({
+          rank: index + 1,
+          address: entry.address,
+          score: entry.score
+        }));
+      
+      setLeaderboard(sortedParticipants);
+      console.log(' Leaderboard updated:', sortedParticipants);
+      
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      setLeaderboard([]);
+    }
+  };
+
+  // Function to check current user's score
+  const checkUserScore = async () => {
+    if (!tournament || !tournamentIdFromURL || !walletAddress) return;
+
+    try {
+      console.log(' Checking user score...');
+      
+      const scoreData = await contractAPI.checkScoreSubmission(Number(tournamentIdFromURL), walletAddress);
+      
+      if (scoreData.hasScore) {
+        setUserScore(scoreData.score);
+        console.log(` User score found: ${scoreData.score}`);
+        
+        // Find user's rank in leaderboard
+        const userRank = leaderboard.findIndex(entry => entry.address === walletAddress) + 1;
+        setCurrentUserRank(userRank > 0 ? userRank : null);
+      } else {
+        setUserScore(0);
+        setCurrentUserRank(null);
+        console.log(' No score found for user');
+      }
+    } catch (error) {
+      console.error('Error checking user score:', error);
     }
   };
 
@@ -221,10 +223,12 @@ const Play = () => {
     if (tournament && tournamentIdFromURL) {
       // Initial fetch
       fetchLeaderboard();
+      checkUserScore();
       
       // Set up periodic refresh for live updates
       const interval = setInterval(() => {
         fetchLeaderboard();
+        checkUserScore();
       }, 10000); // Refresh every 10 seconds
       
       return () => clearInterval(interval);
@@ -383,24 +387,16 @@ const Play = () => {
             {/* Participant List */}
             <div className="mt-8 max-h-64 overflow-y-auto">
               <div className="text-left space-y-2">
-                {leaderboard.length > 0 ? (
-                  leaderboard.map((participant, i) => (
+                {tournament.participantCount > 0 ? (
+                  Array.from({ length: tournament.participantCount }).map((_, i) => (
                     <div
-                      key={participant.address}
+                      key={i}
                       className="bg-card/30 border border-primary/20 rounded p-3 font-mono text-sm animate-fade-in"
                       style={{ animationDelay: `${i * 0.1}s` }}
                     >
-                      <span className="text-primary">
-                        {participant.address === walletAddress ? 'YOU' : `${participant.address.slice(0, 8)}...${participant.address.slice(-4)}`}
-                      </span>
+                      <span className="text-primary">RUNNER_{i + 1}</span>
                       <span className="text-muted-foreground mx-2">|</span>
                       <span className="text-primary">READY</span>
-                      {participant.score > 0 && (
-                        <>
-                          <span className="text-muted-foreground mx-2">|</span>
-                          <span className="text-secondary">SCORE: {participant.score.toLocaleString()}</span>
-                        </>
-                      )}
                     </div>
                   ))
                 ) : (
@@ -625,7 +621,37 @@ const Play = () => {
             </div>
           </div>
 
+          {/* Debug Info */}
+          {walletAddress && (
+            <div className="mt-8 p-3 bg-muted/10 rounded border border-muted/30">
+              <h4 className="text-xs font-bold text-muted-foreground mb-2">DEBUG INFO</h4>
+              <div className="text-xs space-y-1">
+                <div>Tournament: {tournamentIdFromURL}</div>
+                <div>Wallet: {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}</div>
+                <div>User Score: {userScore}</div>
+                <div>User Rank: {currentUserRank || 'N/A'}</div>
+                <div>Leaderboard Entries: {leaderboard.length}</div>
+              </div>
+              <NeonButton
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  fetchLeaderboard();
+                  checkUserScore();
+                }}
+                className="w-full mt-2 text-xs"
+              >
+                Refresh Data
+              </NeonButton>
+            </div>
+          )}
 
+          {/* Tournament Management */}
+          {tournamentIdFromURL && (
+            <div className="mt-8">
+              <TournamentEndManager tournamentId={tournamentIdFromURL} />
+            </div>
+          )}
         </div>
       </div>
     </div>

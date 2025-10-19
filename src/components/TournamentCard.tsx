@@ -36,6 +36,7 @@ export const TournamentCard = ({ tournament, onEnter, onPlay, checkUserParticipa
 
     checkParticipation();
   }, [tournament.id, walletAddress, checkUserParticipation]);
+
   const getStatusColor = (status: Tournament['status']) => {
     switch (status) {
       case 'pending':
@@ -52,89 +53,88 @@ export const TournamentCard = ({ tournament, onEnter, onPlay, checkUserParticipa
     ? `${Math.floor((tournament.endBlock - 100000) / 144)} days` 
     : '~7 days';
 
-  return (
-    <HolographicCard className="flex flex-col h-full">
-      <div className="flex items-start justify-between mb-4">
-        <GlitchText as="h3" className="text-2xl text-primary">
-          #{tournament.id}
-        </GlitchText>
-        <Badge className={`${getStatusColor(tournament.status)} font-mono uppercase`}>
-          {tournament.status}
-        </Badge>
-      </div>
+  // Create subtle card variation based on tournament ID while keeping same structure
+  const cardVariant = parseInt(tournament.id) % 3;
+  
+  // Different gradient backgrounds for variety
+  const getCardGradient = () => {
+    switch (cardVariant) {
+      case 0:
+        return 'bg-gradient-to-br from-primary/5 via-background to-secondary/5';
+      case 1:
+        return 'bg-gradient-to-br from-secondary/5 via-background to-primary/5';
+      case 2:
+        return 'bg-gradient-to-br from-primary/3 via-secondary/3 to-background';
+      default:
+        return 'bg-gradient-to-br from-primary/5 via-background to-secondary/5';
+    }
+  };
 
-      {/* Progress Ring */}
-      <div className="relative w-32 h-32 mx-auto mb-6">
-        <svg className="w-full h-full transform -rotate-90">
-          <circle
-            cx="64"
-            cy="64"
-            r="56"
-            stroke="hsl(var(--muted))"
-            strokeWidth="8"
-            fill="none"
-          />
-          <circle
-            cx="64"
-            cy="64"
-            r="56"
-            stroke="hsl(var(--secondary))"
-            strokeWidth="8"
-            fill="none"
-            strokeDasharray={`${2 * Math.PI * 56}`}
-            strokeDashoffset={`${2 * Math.PI * 56 * (1 - progress / 100)}`}
-            className="transition-all duration-500 matrix-glow-green"
-            strokeLinecap="round"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="text-3xl font-bold text-secondary">{Math.round(progress)}%</div>
-          <div className="text-xs text-muted-foreground">Complete</div>
+  return (
+    <HolographicCard className={`flex flex-col h-full ${getCardGradient()}`}>
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <GlitchText as="span" className="text-lg font-bold text-primary">
+              #{tournament.id}
+            </GlitchText>
+          </div>
+          <div>
+            <Badge className={`${getStatusColor(tournament.status)} font-mono uppercase text-xs`}>
+              {tournament.status}
+            </Badge>
+          </div>
         </div>
       </div>
 
-      {/* Pool Stats */}
-      <div className="space-y-3 mb-6">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground flex items-center gap-2">
-            <Target className="w-4 h-4" />
-            Pool
-          </span>
-          <span className="font-bold text-primary">
-            {tournament.currentPool} / {tournament.targetPool} STX
-          </span>
+      {/* Pool Progress Bar */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-muted-foreground">Pool Progress</span>
+          <span className="text-sm font-bold text-primary">{Math.round(progress)}%</span>
+        </div>
+        <div className="h-3 bg-muted rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-secondary to-primary transition-all duration-500 matrix-glow-green"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-xs text-muted-foreground">{tournament.currentPool} STX</span>
+          <span className="text-xs text-muted-foreground">{tournament.targetPool} STX</span>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-card/50 rounded-lg p-3 border border-primary/20">
+          <div className="flex items-center gap-2 mb-1">
+            <Users className="w-4 h-4 text-primary" />
+            <span className="text-xs text-muted-foreground">Runners</span>
+          </div>
+          <div className="text-xl font-bold text-primary">{tournament.participantCount}</div>
         </div>
         
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Runners
-          </span>
-          <span className="font-bold text-primary">{tournament.participantCount}</span>
-        </div>
-
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground flex items-center gap-2">
-            <Zap className="w-4 h-4" />
-            Min Entry
-          </span>
-          <span className="font-bold text-primary">{tournament.minEntryPrice} STX</span>
-        </div>
-
-        {tournament.status !== 'pending' && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Time Left
-            </span>
-            <span className="font-bold text-foreground">{timeRemaining}</span>
+        <div className="bg-card/50 rounded-lg p-3 border border-secondary/20">
+          <div className="flex items-center gap-2 mb-1">
+            <Zap className="w-4 h-4 text-secondary" />
+            <span className="text-xs text-muted-foreground">Entry</span>
           </div>
-        )}
+          <div className="text-xl font-bold text-secondary">{tournament.minEntryPrice}</div>
+        </div>
       </div>
 
+      {tournament.status !== 'pending' && (
+        <div className="flex items-center gap-2 mb-4 p-2 bg-muted/20 rounded">
+          <Clock className="w-4 h-4 text-primary" />
+          <span className="text-sm text-muted-foreground">Time Left:</span>
+          <span className="text-sm font-bold text-foreground">{timeRemaining}</span>
+        </div>
+      )}
+
       {/* Creator */}
-      <div className="text-xs text-muted-foreground mb-4">
-        Creator: <span className="text-primary font-mono">{tournament.creator}</span>
+      <div className="text-xs text-muted-foreground mb-4 p-2 bg-card/30 rounded font-mono">
+        Creator: <span className="text-primary">{tournament.creator.slice(0, 8)}...{tournament.creator.slice(-4)}</span>
       </div>
 
       {/* Action Buttons */}
@@ -149,6 +149,15 @@ export const TournamentCard = ({ tournament, onEnter, onPlay, checkUserParticipa
               <Play className="w-4 h-4" />
               PLAY NOW
             </NeonButton>
+          ) : hasParticipated && tournament.status !== 'active' ? (
+            <div className="text-center text-sm text-primary">
+              {tournament.status === 'pending' ? '⏳ Tournament not started yet' : 
+               tournament.status === 'ended' ? '🏁 Tournament has ended' : null}
+            </div>
+          ) : !hasParticipated && tournament.status === 'active' ? (
+            <div className="text-center text-sm text-destructive">
+              ❌ You must participate in the pool to play
+            </div>
           ) : null}
           
           {!hasParticipated && (

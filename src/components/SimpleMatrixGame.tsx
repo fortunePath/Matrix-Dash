@@ -296,8 +296,8 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       newPlayer.y += 8;
     }
 
-    // Shooting
-    if (keysPressed.current.has('Space') && now - lastShot > 200) {
+    // Shooting - normal rate
+    if (keysPressed.current.has('Space') && now - lastShot > 200) { // Normal shooting rate (was 100)
       setBullets(prev => [...prev, { x: newPlayer.x, y: newPlayer.y - 20, id: now }]);
       setLastShot(now);
       playShootSound();
@@ -305,20 +305,25 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
 
     setPlayer(newPlayer);
 
-    // Update bullets
+    // Update bullets - normal speed
     setBullets(prev => prev
-      .map(bullet => ({ ...bullet, y: bullet.y - 10 }))
+      .map(bullet => ({ ...bullet, y: bullet.y - 12 })) // Normal bullet speed (was 15)
       .filter(bullet => bullet.y > 0)
     );
 
-    // Spawn enemies
-    if (now - lastEnemySpawn > 1000) {
-      setEnemies(prev => [...prev, {
-        x: Math.random() * 760 + 20,
-        y: 0,
-        id: now,
-        type: Math.floor(Math.random() * 4) // Random enemy type (0-3)
-      }]);
+    // Spawn enemies - Moderate spawn rate
+    if (now - lastEnemySpawn > 1200) { // Slower spawn rate (was 300)
+      const enemiesToSpawn = Math.floor(Math.random() * 2) + 1; // Spawn 1-2 enemies at once (was 2-5)
+      const newEnemies = [];
+      for (let i = 0; i < enemiesToSpawn; i++) {
+        newEnemies.push({
+          x: Math.random() * 760 + 20,
+          y: -i * 40, // Spread them out more vertically
+          id: now + i,
+          type: Math.floor(Math.random() * 4) // Random enemy type (0-3)
+        });
+      }
+      setEnemies(prev => [...prev, ...newEnemies]);
       setLastEnemySpawn(now);
     }
 
@@ -335,15 +340,15 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
 
     // Update enemies
     setEnemies(prev => {
-      const updated = prev.map(enemy => ({ ...enemy, y: enemy.y + 2 }));
+      const updated = prev.map(enemy => ({ ...enemy, y: enemy.y + 2 })); // Slower movement (was 3)
       
       const reachingBottom = updated.filter(enemy => enemy.y >= 600);
       if (reachingBottom.length > 0) {
         setEnemiesPassed(current => {
           const newCount = current + reachingBottom.length;
-          if (newCount >= 5 && !gameOver) {
+          // Game over when 5 enemies pass
+          if (newCount >= 5) {
             setGameOver(true);
-            stopBackgroundMusic();
             if (onGameEnd) {
               onGameEnd(score);
             }
@@ -631,7 +636,9 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
     ctx.font = '18px monospace';
     ctx.textAlign = 'center';
     ctx.fillText(`Score: ${score}`, 400, 30);
-    ctx.fillText(`Enemies Passed: ${enemiesPassed}`, 400, 55);
+    ctx.fillStyle = enemiesPassed >= 4 ? '#FF0000' : '#00FF00'; // Red when close to game over
+    ctx.fillText(`Enemies Passed: ${enemiesPassed}/5`, 400, 55);
+    ctx.fillStyle = '#00FF00';
     ctx.font = '14px monospace';
     ctx.fillText('Use left/right arrows to move, space to shoot', 400, 580);
     ctx.textAlign = 'left';
@@ -686,7 +693,7 @@ export const SimpleMatrixGame: React.FC<SimpleMatrixGameProps> = ({ onScoreUpdat
       
       ctx.font = 'bold 24px "Orbitron", "Courier New", monospace';
       ctx.fillStyle = '#FF6666';
-      ctx.fillText('5 Enemies Passed!', 400, 320);
+      ctx.fillText('Too many enemies breached the matrix!', 400, 320);
       
       ctx.fillStyle = '#FFAA00';
       ctx.fillText(`Final Score: ${score}`, 400, 350);

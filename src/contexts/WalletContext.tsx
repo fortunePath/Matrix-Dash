@@ -14,6 +14,7 @@ import {
   uintCV,
   stringAsciiCV,
   principalCV,
+  bufferCV,
   PostConditionMode
 } from '@stacks/transactions';
 
@@ -188,6 +189,14 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
         } else if (typeof arg === 'string') {
           if (arg.startsWith('SP') || arg.startsWith('ST')) {
             return principalCV(arg);
+          } else if (arg.startsWith('0x')) {
+            // Handle hex strings as buffers (for game session hash and signatures)
+            const hexData = arg.slice(2); // Remove '0x' prefix
+            const buffer = new Uint8Array(hexData.length / 2);
+            for (let i = 0; i < hexData.length; i += 2) {
+              buffer[i / 2] = parseInt(hexData.substr(i, 2), 16);
+            }
+            return bufferCV(buffer);
           } else {
             return stringAsciiCV(arg);
           }
