@@ -1,73 +1,162 @@
-# Welcome to your Lovable project
+# Matrix Dash
 
-## Project info
+A competitive platformer game built on the Stacks blockchain where players compete in tournaments for STX prizes. Experience Matrix-themed gameplay with skill-based competition and blockchain-powered prize distribution.
 
-**URL**: https://lovable.dev/projects/17c8bbd1-646c-4614-a2a8-16b2bc0f3fbd
+## Features
 
-## How can I edit this code?
+- **Competitive Tournaments**: Join STX-powered tournaments with real prizes
+- **Skill-Based Gameplay**: Pure platformer mechanics with precision timing
+- **Blockchain Integration**: Stacks blockchain for secure prize distribution
+- **Prize Pool Distribution**: Top 10% of players share 80% of the prize pool
+- **Matrix Theme**: Cyberpunk aesthetic with neon visuals and glitch effects
+- **Real-Time Leaderboards**: Track your progress and ranking
+- **Wallet Integration**: Connect Stacks wallet for seamless gameplay
 
-There are several ways of editing your application.
+## Game Mechanics
 
-**Use Lovable**
+### Tournament Structure
+- Tournament creators set minimum entry fees and contribute to prize pools
+- Players pay entry fees to join tournaments
+- Target pool size determines when tournaments begin
+- Tournament duration is configurable (1 day to 1 week)
+- Top 10% of participants receive 80% of the prize pool
+- 10% goes to treasury, 10% is burned for deflation
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/17c8bbd1-646c-4614-a2a8-16b2bc0f3fbd) and start prompting.
+### Prize Distribution
+- **Winners (80%)**: Distributed among top 10% of players
+- **Treasury (10%)**: Platform development and maintenance
+- **Burn (10%)**: Deflationary mechanism
 
-Changes made via Lovable will be committed automatically to this repo.
+### Scoring System
+- Submit scores during active tournaments
+- Cryptographic proof prevents cheating
+- Best score per player counts for ranking
+- Rate limiting prevents spam submissions
 
-**Use your preferred IDE**
+## Technology Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend
+- **React 18** with TypeScript
+- **Vite** for fast development and building
+- **Tailwind CSS** with custom Matrix-themed styling
+- **Radix UI** components for accessible UI
+- **React Router** for navigation
+- **TanStack Query** for data fetching
+- **Lucide React** for icons
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Blockchain
+- **Stacks blockchain** for smart contracts
+- **Clarity** smart contract language
+- **Stacks Connect** for wallet integration
+- **STX token** for entry fees and prizes
 
-Follow these steps:
+### Smart Contract Features
+- Tournament creation and management
+- Player registration and scoring
+- Automated prize distribution
+- Player statistics tracking
+- Anti-cheat mechanisms with cryptographic proofs
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Installation
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. Clone the repository:
+```bash
+git clone [repository-url]
+cd Matrix-Dash
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. Install dependencies:
+```bash
+npm install
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+4. Build for production:
+```bash
+npm run build
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Project Structure
 
-**Use GitHub Codespaces**
+```
+src/
+├── components/          # React components
+│   ├── ui/             # Reusable UI components
+│   ├── MatrixBackground.tsx
+│   ├── SimpleMatrixGame.tsx
+│   └── TournamentCard.tsx
+├── pages/              # Route components
+│   ├── Index.tsx       # Landing page
+│   ├── Tournaments.tsx # Tournament listings
+│   ├── Play.tsx        # Game interface
+│   └── Leaderboard.tsx # Rankings
+├── contexts/           # React contexts
+│   └── WalletContext.tsx
+├── hooks/              # Custom React hooks
+│   ├── useContract.ts
+│   └── useTournaments.ts
+└── lib/                # Utilities
+    ├── contract.ts     # Smart contract interactions
+    └── utils.ts        # Helper functions
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+contracts/
+├── contracts/
+│   └── main2.clar      # Tournament smart contract
+└── tests/              # Contract tests
+```
 
-## What technologies are used for this project?
+## Smart Contract
 
-This project is built with:
+The game is powered by a Clarity smart contract deployed on Stacks that handles:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Tournament creation and lifecycle management
+- Player registration and entry fee collection
+- Score submission with cryptographic verification
+- Automated prize distribution
+- Player statistics and leaderboards
 
-## How can I deploy this project?
+### Key Constants
+- Minimum entry price: 1 STX
+- Minimum pool contribution: 5 STX
+- Minimum target pool: 10 STX
+- Tournament duration: 1 day to 1 week
 
-Simply open [Lovable](https://lovable.dev/projects/17c8bbd1-646c-4614-a2a8-16b2bc0f3fbd) and click on Share -> Publish.
+## Getting Started
 
-## Can I connect a custom domain to my Lovable project?
+1. **Connect Wallet**: Link your Stacks wallet to participate
+2. **Browse Tournaments**: View available tournaments and their details
+3. **Join Tournament**: Pay entry fee to participate
+4. **Play Game**: Complete runs and submit your best scores
+5. **Win Prizes**: Top performers receive STX rewards
 
-Yes, you can!
+## Development
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Scripts
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run build:dev` - Build in development mode
+- `npm run lint` - Run ESLint
+- `npm run preview` - Preview production build
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### Testing
+Smart contract tests are located in `contracts/tests/` and can be run using Clarinet.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and ensure code quality
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For questions or support, please open an issue in the repository or contact the development team.
